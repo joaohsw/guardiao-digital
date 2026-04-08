@@ -195,10 +195,30 @@ crimes = [
     },
 ]
 
+ATTACKS = [
+    {"name": "Analise de Sistema", "type": "analise", "base_damage": 14},
+    {"name": "Firewall Defensivo", "type": "defesa", "base_damage": 10},
+    {"name": "Varredura Antivirus", "type": "antivirus", "base_damage": 16},
+    {"name": "Forca Bruta", "type": "bruteforce", "base_damage": 18},
+]
+
+ENEMY_COMBAT_PROFILES = [
+    {"max_health": 34, "weakness": "analise", "resistance": "defesa", "counter_damage": 1},
+    {"max_health": 40, "weakness": "antivirus", "resistance": "bruteforce", "counter_damage": 1},
+    {"max_health": 36, "weakness": "bruteforce", "resistance": "defesa", "counter_damage": 1},
+    {"max_health": 42, "weakness": "antivirus", "resistance": "analise", "counter_damage": 1},
+    {"max_health": 38, "weakness": "defesa", "resistance": "analise", "counter_damage": 1},
+    {"max_health": 35, "weakness": "analise", "resistance": "defesa", "counter_damage": 1},
+    {"max_health": 39, "weakness": "defesa", "resistance": "bruteforce", "counter_damage": 1},
+    {"max_health": 37, "weakness": "defesa", "resistance": "bruteforce", "counter_damage": 1},
+    {"max_health": 41, "weakness": "analise", "resistance": "antivirus", "counter_damage": 1},
+    {"max_health": 44, "weakness": "analise", "resistance": "bruteforce", "counter_damage": 1},
+]
+
 GAME_STORY = (
     "A internet da cidade foi tomada por viloes digitais. "
     "Como Guardiao Digital, voce deve explorar o mapa, encontrar cada ameaca "
-    "e vencer desafios de conhecimento para proteger os usuarios."
+    "e neutralizar ataques digitais para proteger os usuarios."
 )
 
 CONCLUSION_TEXT = (
@@ -310,6 +330,11 @@ class Villain:
     crime: dict
     tile_pos: Tuple[int, int]
     world_pos: Tuple[int, int]
+    max_health: int
+    health: int
+    weakness: str
+    resistance: str
+    counter_damage: int
     defeated: bool = False
 
 
@@ -420,6 +445,7 @@ villains: List[Villain] = []
 for crime_index, crime_data in enumerate(crimes):
     fallback_pos = START_TILE
     spawn = VILLAIN_SPAWNS[crime_index] if crime_index < len(VILLAIN_SPAWNS) else fallback_pos
+    combat_profile = ENEMY_COMBAT_PROFILES[crime_index]
     if not tile_is_walkable(spawn[0], spawn[1]):
         spawn = fallback_pos
     villains.append(
@@ -428,16 +454,23 @@ for crime_index, crime_data in enumerate(crimes):
             crime=crime_data,
             tile_pos=spawn,
             world_pos=tile_to_center(spawn[0], spawn[1]),
+            max_health=combat_profile["max_health"],
+            health=combat_profile["max_health"],
+            weakness=combat_profile["weakness"],
+            resistance=combat_profile["resistance"],
+            counter_damage=combat_profile["counter_damage"],
         )
     )
 
-player_health = 3
-max_player_health = 3
+player_health = 5
+max_player_health = 5
 player_position = pygame.Vector2(START_CENTER[0], START_CENTER[1])
 game_state = "menu"
 active_villain_id: Optional[int] = None
 feedback_active = False
-last_answer_was_correct = False
+feedback_title = ""
+feedback_message = ""
+feedback_tone = "neutral"
 encounter_lock_villain_id: Optional[int] = None
 
 
@@ -671,23 +704,31 @@ def draw_encounter_screen() -> None:
     )
 
 
-def draw_feedback_overlay(was_correct: bool, crime: dict) -> None:
+def draw_enemy_health_bar(surface: pygame.Surface, villain: Villain, x: int, y: int, width: int = 320) -> None:
+    draw_text("Estabilidade do inimigo", help_font, WHITE, surface, x, y)
+    bar_rect = pygame.Rect(x, y + 18, width, 18)
+    pygame.draw.rect(surface, RED, bar_rect, border_radius=4)
+    if villain.health > 0:
+        current_width = int(width * (villain.health / villain.max_health))
+        pygame.draw.rect(surface, GREEN, (bar_rect.x, bar_rect.y, current_width, bar_rect.height), border_radius=4)
+    draw_text(f"{villain.health}/{villain.max_health}", help_font, WHITE, surface, bar_rect.right - 52, y - 1)
+
+
+def draw_feedback_overlay() -> None:
     overlay = pygame.Surface(SCREEN_SIZE, pygame.SRCALPHA)
-    if was_correct:
+    if feedback_tone == "victory":
         overlay.fill((0, 100, 0, 180))
-        message = "Resposta correta"
-        explanation = crime["correct_explanation"]
-    else:
+    elif feedback_tone == "defeat":
         overlay.fill((110, 0, 0, 180))
-        message = "Resposta incorreta"
-        explanation = crime["explanation"]
+    else:
+        overlay.fill((20, 55, 90, 180))
     screen.blit(overlay, (0, 0))
     feedback_panel = pygame.Rect(140, 120, 1000, 450)
     draw_panel(feedback_panel, (15, 20, 24, 220))
 
-    draw_text(message, feedback_font, WHITE, screen, feedback_panel.centerx, 186, center=True)
+    draw_text(feedback_title, feedback_font, WHITE, screen, feedback_panel.centerx, 186, center=True)
     draw_text_block(
-        explanation,
+        feedback_message,
         description_font,
         WHITE,
         screen,
@@ -699,12 +740,15 @@ def draw_feedback_overlay(was_correct: bool, crime: dict) -> None:
 
     if player_health <= 0:
         footer = "Integridade zerada. ENTER ou clique para continuar."
-    elif was_correct and all_villains_defeated():
-        footer = "Todos os viloes foram derrotados. ENTER ou clique para concluir a missao."
-    elif was_correct:
-        footer = "Vilao neutralizado. ENTER ou clique para voltar ao mapa."
     else:
-        footer = "Tente novamente no mapa. ENTER ou clique para continuar."
+        villain = get_active_villain()
+        villain_defeated = villain.defeated if villain is not None else False
+        if villain_defeated and all_villains_defeated():
+            footer = "Todos os viloes foram derrotados. ENTER ou clique para concluir a missao."
+        elif villain_defeated:
+            footer = "Vilao neutralizado. ENTER ou clique para voltar ao mapa."
+        else:
+            footer = "ENTER ou clique para continuar o combate."
 
     draw_text(footer, help_font, WHITE, screen, feedback_panel.centerx, feedback_panel.bottom - 35, center=True)
 
@@ -715,7 +759,6 @@ def draw_battle_screen() -> None:
         return
 
     screen.blit(combate_bg, (0, 0))
-    crime = villain.crime
 
     enemy_pos = (SCREEN_WIDTH // 2, int(SCREEN_HEIGHT * 0.29))
     player_pos = (SCREEN_WIDTH // 2, int(SCREEN_HEIGHT * 0.54))
@@ -729,14 +772,28 @@ def draw_battle_screen() -> None:
 
     battle_header = pygame.Rect(230, 16, 820, 92)
     draw_panel(battle_header, (18, 24, 28, 200))
-    draw_text(crime["enemy_name"], title_font, WHITE, screen, battle_header.centerx, 50, center=True)
+    draw_text(villain.crime["enemy_name"], title_font, WHITE, screen, battle_header.centerx, 40, center=True)
     draw_health_bar(screen, battle_header.x + 26, 73)
+    draw_enemy_health_bar(screen, villain, battle_header.right - 348, 46)
 
-    for index, option in enumerate(crime["options"]):
+    info_panel = pygame.Rect(160, 365, 960, 112)
+    draw_panel(info_panel, (18, 24, 28, 200))
+    draw_text_block(
+        villain.crime["description"],
+        description_font,
+        WHITE,
+        screen,
+        info_panel.x + 30,
+        info_panel.y + 24,
+        info_panel.width - 60,
+        center=False,
+    )
+
+    for index, attack in enumerate(ATTACKS):
         option_rect = BATTLE_OPTION_RECTS[index]
         pygame.draw.rect(screen, BUTTON_COLOR, option_rect, border_radius=10)
         pygame.draw.rect(screen, BUTTON_BORDER, option_rect, 2, border_radius=10)
-        labeled_option = f"{index + 1}. {option}"
+        labeled_option = f"{index + 1}. {attack['name']}\nTipo: {attack['type']} | Dano: {attack['base_damage']}"
         draw_text_block(
             labeled_option,
             option_font,
@@ -750,7 +807,7 @@ def draw_battle_screen() -> None:
         )
 
     draw_text(
-        "Escolha com clique ou teclas 1-4",
+        "Escolha um ataque com clique ou teclas 1-4",
         help_font,
         WHITE,
         screen,
@@ -760,7 +817,7 @@ def draw_battle_screen() -> None:
     )
 
     if feedback_active:
-        draw_feedback_overlay(last_answer_was_correct, crime)
+        draw_feedback_overlay()
 
 
 def draw_conclusion_screen() -> None:
@@ -809,16 +866,19 @@ def draw_end_screen() -> None:
 
 
 def reset_progress() -> None:
-    global player_health, active_villain_id, feedback_active, last_answer_was_correct, encounter_lock_villain_id
+    global player_health, active_villain_id, feedback_active, feedback_title, feedback_message, feedback_tone, encounter_lock_villain_id
     player_health = max_player_health
     player_position.x = START_CENTER[0]
     player_position.y = START_CENTER[1]
     active_villain_id = None
     feedback_active = False
-    last_answer_was_correct = False
+    feedback_title = ""
+    feedback_message = ""
+    feedback_tone = "neutral"
     encounter_lock_villain_id = None
     for villain in villains:
         villain.defeated = False
+        villain.health = villain.max_health
 
 
 def move_player_continuous(input_x: int, input_y: int, dt: float) -> None:
@@ -862,35 +922,94 @@ def try_trigger_encounter() -> None:
         game_state = "encounter"
 
 
-def resolve_battle_answer(selected_index: int) -> None:
-    global feedback_active, last_answer_was_correct, player_health
+def calculate_attack_damage(attack: dict, villain: Villain) -> Tuple[int, str]:
+    damage = attack["base_damage"]
+    effectiveness = "normal"
+
+    if attack["type"] == villain.weakness:
+        damage += 6
+        effectiveness = "fraqueza"
+    elif attack["type"] == villain.resistance:
+        damage = max(4, damage - 6)
+        effectiveness = "resistencia"
+
+    return damage, effectiveness
+
+
+def open_battle_feedback(title: str, message: str, tone: str) -> None:
+    global feedback_active, feedback_title, feedback_message, feedback_tone
+    feedback_active = True
+    feedback_title = title
+    feedback_message = message
+    feedback_tone = tone
+
+
+def resolve_battle_turn(selected_index: int) -> None:
+    global player_health
     villain = get_active_villain()
     if villain is None:
         return
 
-    correct_index = villain.crime["correct_option_index"]
-    if selected_index == correct_index:
-        villain.defeated = True
-        last_answer_was_correct = True
-    else:
-        last_answer_was_correct = False
-        player_health = max(0, player_health - 1)
+    attack = ATTACKS[selected_index]
+    damage, effectiveness = calculate_attack_damage(attack, villain)
+    villain.health = max(0, villain.health - damage)
 
-    feedback_active = True
+    if effectiveness == "fraqueza":
+        attack_result = f"{attack['name']} explorou a fraqueza do inimigo e causou {damage} de dano."
+    elif effectiveness == "resistencia":
+        attack_result = f"{attack['name']} encontrou resistencia e causou apenas {damage} de dano."
+    else:
+        attack_result = f"{attack['name']} causou {damage} de dano."
+
+    if villain.health <= 0:
+        villain.defeated = True
+        open_battle_feedback(
+            "Vilao neutralizado",
+            f"{attack_result} {villain.crime['enemy_name']} foi derrotado.",
+            "victory",
+        )
+        return
+
+    player_health = max(0, player_health - villain.counter_damage)
+    counter_result = (
+        f"{villain.crime['enemy_name']} contra-atacou e causou "
+        f"{villain.counter_damage} de dano a sua integridade."
+    )
+
+    if player_health <= 0:
+        open_battle_feedback(
+            "Integridade comprometida",
+            f"{attack_result} {counter_result}",
+            "defeat",
+        )
+    else:
+        open_battle_feedback(
+            "Troca de golpes",
+            f"{attack_result} {counter_result}",
+            "neutral",
+        )
 
 
 def close_feedback_and_continue() -> None:
     global game_state, active_villain_id, feedback_active, encounter_lock_villain_id
     previous_villain_id = active_villain_id
     feedback_active = False
-    active_villain_id = None
     if player_health <= 0:
+        active_villain_id = None
         game_state = "game_over"
-    elif all_villains_defeated():
-        game_state = "conclusion"
-    else:
+        return
+
+    villain = get_active_villain()
+    if villain is not None and villain.defeated:
+        active_villain_id = None
+        if all_villains_defeated():
+            game_state = "conclusion"
+            return
         encounter_lock_villain_id = previous_villain_id
         game_state = "exploring"
+        return
+
+    game_state = "battle"
 
 
 def toggle_fullscreen() -> None:
@@ -902,7 +1021,7 @@ def toggle_fullscreen() -> None:
         screen = pygame.display.set_mode(SCREEN_SIZE)
 
 
-def key_to_answer_index(event_key: int) -> Optional[int]:
+def key_to_attack_index(event_key: int) -> Optional[int]:
     key_map = {
         pygame.K_1: 0,
         pygame.K_2: 1,
@@ -958,7 +1077,7 @@ def main() -> None:
                 else:
                     selected_index: Optional[int] = None
                     if event.type == pygame.KEYDOWN:
-                        selected_index = key_to_answer_index(event.key)
+                        selected_index = key_to_attack_index(event.key)
                     elif event.type == pygame.MOUSEBUTTONDOWN:
                         for index, rect in enumerate(BATTLE_OPTION_RECTS):
                             if rect.collidepoint(event.pos):
@@ -966,7 +1085,7 @@ def main() -> None:
                                 break
 
                     if selected_index is not None:
-                        resolve_battle_answer(selected_index)
+                        resolve_battle_turn(selected_index)
 
             elif game_state == "conclusion":
                 if (event.type == pygame.KEYDOWN and event.key == pygame.K_RETURN) or event.type == pygame.MOUSEBUTTONDOWN:
