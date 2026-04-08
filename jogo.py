@@ -55,7 +55,7 @@ VILLAIN_SPAWNS = [
     (17, 1),
     (2, 3),
     (8, 3),
-    (14, 3),
+    (18, 9),
     (9, 5),
     (16, 5),
     (3, 8),
@@ -934,7 +934,7 @@ def main() -> None:
             if game_state == "menu":
                 if (event.type == pygame.KEYDOWN and event.key == pygame.K_RETURN) or event.type == pygame.MOUSEBUTTONDOWN:
                     reset_progress()
-                    game_state = "story"
+                    game_state = "exploring"
 
             elif game_state == "story":
                 if (event.type == pygame.KEYDOWN and event.key == pygame.K_RETURN) or event.type == pygame.MOUSEBUTTONDOWN:
