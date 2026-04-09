@@ -1,0 +1,149 @@
+﻿from typing import List, Optional, Tuple
+
+import pygame
+
+import game_assets
+from game_config import (
+    ENEMY_COMBAT_PROFILES,
+    MAP_COLS,
+    MAP_HEIGHT,
+    MAP_OFFSET_X,
+    MAP_OFFSET_Y,
+    MAP_ROWS,
+    MAP_WIDTH,
+    PLAYER_HITBOX_SIZE,
+    TILE_SIZE,
+    VILLAIN_SPAWNS,
+    VILLAIN_TRIGGER_PADDING,
+    WORLD_MAP_LAYOUT,
+    crimes,
+)
+from game_models import Villain
+
+
+def find_start_tile() -> Tuple[int, int]:
+    for row_index, row in enumerate(WORLD_MAP_LAYOUT):
+        for col_index, cell in enumerate(row):
+            if cell == "S":
+                return col_index, row_index
+    return 1, 1
+
+
+def tile_is_walkable(tile_x: int, tile_y: int) -> bool:
+    if tile_x < 0 or tile_y < 0 or tile_x >= MAP_COLS or tile_y >= MAP_ROWS:
+        return False
+    return WORLD_MAP_LAYOUT[tile_y][tile_x] != "#"
+
+
+def tile_to_rect(tile_x: int, tile_y: int) -> pygame.Rect:
+    return pygame.Rect(
+        MAP_OFFSET_X + tile_x * TILE_SIZE,
+        MAP_OFFSET_Y + tile_y * TILE_SIZE,
+        TILE_SIZE,
+        TILE_SIZE,
+    )
+
+
+def tile_to_center(tile_x: int, tile_y: int) -> Tuple[int, int]:
+    rect = tile_to_rect(tile_x, tile_y)
+    return rect.centerx, rect.centery
+
+
+START_TILE = find_start_tile()
+START_CENTER = tile_to_center(START_TILE[0], START_TILE[1])
+
+villains: List[Villain] = []
+for crime_index, crime_data in enumerate(crimes):
+    fallback_pos = START_TILE
+    spawn = VILLAIN_SPAWNS[crime_index] if crime_index < len(VILLAIN_SPAWNS) else fallback_pos
+    combat_profile = ENEMY_COMBAT_PROFILES[crime_index]
+    if not tile_is_walkable(spawn[0], spawn[1]):
+        spawn = fallback_pos
+    villains.append(
+        Villain(
+            id=crime_index,
+            crime=crime_data,
+            tile_pos=spawn,
+            world_pos=tile_to_center(spawn[0], spawn[1]),
+            max_health=combat_profile["max_health"],
+            health=combat_profile["max_health"],
+            weakness=combat_profile["weakness"],
+            resistance=combat_profile["resistance"],
+            counter_damage=combat_profile["counter_damage"],
+        )
+    )
+
+player_health = 5
+max_player_health = 5
+player_position = pygame.Vector2(START_CENTER[0], START_CENTER[1])
+game_state = "menu"
+active_villain_id: Optional[int] = None
+feedback_active = False
+feedback_title = ""
+feedback_message = ""
+feedback_tone = "neutral"
+encounter_lock_villain_id: Optional[int] = None
+
+
+def get_active_villain() -> Optional[Villain]:
+    if active_villain_id is None:
+        return None
+    for villain in villains:
+        if villain.id == active_villain_id:
+            return villain
+    return None
+
+
+def remaining_villains_count() -> int:
+    return sum(1 for villain in villains if not villain.defeated)
+
+
+def all_villains_defeated() -> bool:
+    return remaining_villains_count() == 0
+
+
+def build_player_hitbox(x: float, y: float) -> pygame.Rect:
+    rect = pygame.Rect(0, 0, PLAYER_HITBOX_SIZE, PLAYER_HITBOX_SIZE)
+    rect.center = (round(x), round(y))
+    return rect
+
+
+def get_player_hitbox() -> pygame.Rect:
+    return build_player_hitbox(player_position.x, player_position.y)
+
+
+def hitbox_collides_with_wall(hitbox: pygame.Rect) -> bool:
+    if (
+        hitbox.left < MAP_OFFSET_X
+        or hitbox.top < MAP_OFFSET_Y
+        or hitbox.right > MAP_OFFSET_X + MAP_WIDTH
+        or hitbox.bottom > MAP_OFFSET_Y + MAP_HEIGHT
+    ):
+        return True
+
+    start_col = max(0, (hitbox.left - MAP_OFFSET_X) // TILE_SIZE)
+    end_col = min(MAP_COLS - 1, (hitbox.right - 1 - MAP_OFFSET_X) // TILE_SIZE)
+    start_row = max(0, (hitbox.top - MAP_OFFSET_Y) // TILE_SIZE)
+    end_row = min(MAP_ROWS - 1, (hitbox.bottom - 1 - MAP_OFFSET_Y) // TILE_SIZE)
+
+    for row_index in range(start_row, end_row + 1):
+        for col_index in range(start_col, end_col + 1):
+            if WORLD_MAP_LAYOUT[row_index][col_index] != "#":
+                continue
+            if hitbox.colliderect(tile_to_rect(col_index, row_index)):
+                return True
+    return False
+
+
+def find_villain_touching_player() -> Optional[Villain]:
+    player_hitbox = get_player_hitbox()
+    for villain in villains:
+        if villain.defeated:
+            continue
+        enemy_rect = game_assets.map_enemy_images[villain.id].get_rect(center=villain.world_pos).inflate(
+            VILLAIN_TRIGGER_PADDING,
+            VILLAIN_TRIGGER_PADDING,
+        )
+        if player_hitbox.colliderect(enemy_rect):
+            return villain
+    return None
