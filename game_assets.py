@@ -76,6 +76,8 @@ collectible_images = {
     for key, filename in collectible_filenames.items()
 }
 
+book_open_image = pygame.transform.scale(load_image("livro_aberto.png", use_alpha=True), (900, 600))
+
 enemy_filenames = [
     "phishing.png",
     "malware.png",

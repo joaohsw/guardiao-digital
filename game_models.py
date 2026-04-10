@@ -5,6 +5,7 @@ from typing import Optional, Tuple
 @dataclass
 class Villain:
     id: int
+    enemy_key: str
     crime: dict
     tile_pos: Tuple[int, int]
     world_pos: Tuple[int, int]

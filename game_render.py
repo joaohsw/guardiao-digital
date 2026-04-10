@@ -3,8 +3,12 @@
 import game_assets
 import game_state
 from game_config import (
-    ATTACKS,
+    ATTACK_CATEGORIES,
     BATTLE_OPTION_RECTS,
+    BOOK_CLOSE_RECT,
+    BOOK_NEXT_RECT,
+    BOOK_PREV_RECT,
+    BOOK_HUD_RECT,
     BUTTON_BORDER,
     BUTTON_COLOR,
     CONCLUSION_TEXT,
@@ -24,6 +28,7 @@ from game_config import (
     SCREEN_SIZE,
     SCREEN_WIDTH,
     START_COLOR,
+    SUBATTACK_OPTION_RECTS,
     TEXT_DARK,
     TILE_SIZE,
     WALL_COLOR,
@@ -33,6 +38,31 @@ from game_config import (
 )
 from game_models import Villain
 from game_ui import draw_panel, draw_text, draw_text_block
+
+
+ENEMY_BOOK_NAMES = {
+    "adware": "Adware",
+    "malware": "Malware",
+    "phishing": "Phishing",
+    "senha": "Senha fraca",
+    "ransomware": "Ransomware",
+    "spyware": "Spyware",
+    "golpe": "Golpe",
+    "deepfake": "Deepfake",
+    "pirataria": "Pirataria",
+    "cyberstalking": "Cyberstalking",
+}
+
+
+def get_attack_display_name(attack_id: str) -> str:
+    attack = game_state.get_attack_by_id(attack_id)
+    if attack is None:
+        return attack_id.replace("_", " ")
+    return attack["name"]
+
+
+def format_attack_list(attack_ids: list[str]) -> str:
+    return ", ".join(get_attack_display_name(attack_id) for attack_id in attack_ids)
 
 
 def draw_health_bar(surface: pygame.Surface, x: int, y: int) -> None:
@@ -50,6 +80,32 @@ def draw_health_bar(surface: pygame.Surface, x: int, y: int) -> None:
             (bar_x, bar_y, segment_width * game_state.player_health, segment_height),
             border_radius=3,
         )
+
+
+def draw_book_hud_button() -> None:
+    if not game_state.book_collected:
+        return
+    pygame.draw.rect(game_assets.screen, BUTTON_COLOR, BOOK_HUD_RECT, border_radius=8)
+    pygame.draw.rect(game_assets.screen, BUTTON_BORDER, BOOK_HUD_RECT, 2, border_radius=8)
+    icon = game_assets.collectible_images["book"]
+    icon_rect = icon.get_rect(center=BOOK_HUD_RECT.center)
+    game_assets.screen.blit(icon, icon_rect)
+
+
+def draw_map_notice() -> None:
+    if not game_state.map_notice_message:
+        return
+    notice_rect = pygame.Rect(250, SCREEN_HEIGHT - 78, 780, 46)
+    draw_panel(notice_rect, (18, 24, 28, 225))
+    draw_text(
+        game_state.map_notice_message,
+        game_assets.help_font,
+        WHITE,
+        game_assets.screen,
+        notice_rect.centerx,
+        notice_rect.centery - 2,
+        center=True,
+    )
 
 
 def draw_menu_screen() -> None:
@@ -189,6 +245,8 @@ def draw_world_screen() -> None:
         center=True,
     )
     draw_text("F11: tela cheia", game_assets.help_font, WHITE, game_assets.screen, SCREEN_WIDTH - 180, 11)
+    draw_book_hud_button()
+    draw_map_notice()
 
 
 def draw_encounter_screen() -> None:
@@ -225,6 +283,7 @@ def draw_encounter_screen() -> None:
         encounter_panel.bottom - 28,
         center=True,
     )
+    draw_book_hud_button()
 
 
 def draw_enemy_health_bar(surface: pygame.Surface, villain: Villain, x: int, y: int, width: int = 320) -> None:
@@ -328,25 +387,67 @@ def draw_battle_screen() -> None:
         center=False,
     )
 
-    for index, attack in enumerate(ATTACKS):
-        option_rect = BATTLE_OPTION_RECTS[index]
-        pygame.draw.rect(game_assets.screen, BUTTON_COLOR, option_rect, border_radius=10)
-        pygame.draw.rect(game_assets.screen, BUTTON_BORDER, option_rect, 2, border_radius=10)
-        labeled_option = f"{index + 1}. {attack['name']}\nTipo: {attack['type']} | Dano: {attack['base_damage']}"
-        draw_text_block(
-            labeled_option,
-            game_assets.option_font,
-            TEXT_DARK,
+    if game_state.selected_attack_category is None:
+        categories = game_state.get_unlocked_categories()
+        for index, category in enumerate(categories):
+            if index >= len(BATTLE_OPTION_RECTS):
+                break
+            option_rect = BATTLE_OPTION_RECTS[index]
+            pygame.draw.rect(game_assets.screen, BUTTON_COLOR, option_rect, border_radius=8)
+            pygame.draw.rect(game_assets.screen, BUTTON_BORDER, option_rect, 2, border_radius=8)
+            category_data = ATTACK_CATEGORIES[category]
+            icon = game_assets.collectible_images[category_data["asset_key"]]
+            icon_rect = icon.get_rect(center=(option_rect.x + 48, option_rect.centery))
+            game_assets.screen.blit(icon, icon_rect)
+            draw_text(
+                f"{index + 1}. {category_data['name']}",
+                game_assets.description_font,
+                TEXT_DARK,
+                game_assets.screen,
+                option_rect.x + 92,
+                option_rect.y + 18,
+            )
+            draw_text(
+                "Abrir ataques desta categoria",
+                game_assets.help_font,
+                TEXT_DARK,
+                game_assets.screen,
+                option_rect.x + 92,
+                option_rect.y + 43,
+            )
+        footer = "Escolha uma categoria coletada com clique ou teclas 1-4"
+    else:
+        category_name = ATTACK_CATEGORIES[game_state.selected_attack_category]["name"]
+        attacks = game_state.get_unlocked_attacks_for_category(game_state.selected_attack_category)
+        draw_text(
+            f"Categoria: {category_name}",
+            game_assets.description_font,
+            WHITE,
             game_assets.screen,
-            option_rect.centerx,
-            option_rect.centery,
-            option_rect.width - 30,
+            SCREEN_WIDTH // 2,
+            492,
             center=True,
-            line_gap=2,
         )
+        for index, attack in enumerate(attacks):
+            if index >= len(SUBATTACK_OPTION_RECTS):
+                break
+            option_rect = SUBATTACK_OPTION_RECTS[index]
+            pygame.draw.rect(game_assets.screen, BUTTON_COLOR, option_rect, border_radius=8)
+            pygame.draw.rect(game_assets.screen, BUTTON_BORDER, option_rect, 2, border_radius=8)
+            effectiveness = game_state.get_attack_effectiveness(villain.enemy_key, attack["id"])
+            visible_effect = f" | Efeito: {effectiveness}" if game_state.book_collected else ""
+            draw_text(
+                f"{index + 1}. {attack['name']}{visible_effect}",
+                game_assets.help_font,
+                TEXT_DARK,
+                game_assets.screen,
+                option_rect.x + 18,
+                option_rect.y + 9,
+            )
+        footer = "Escolha um ataque com clique ou teclas 1-5 | ESC volta para categorias"
 
     draw_text(
-        "Escolha um ataque com clique ou teclas 1-4",
+        footer,
         game_assets.help_font,
         WHITE,
         game_assets.screen,
@@ -354,9 +455,91 @@ def draw_battle_screen() -> None:
         SCREEN_HEIGHT - 14,
         center=True,
     )
+    draw_book_hud_button()
 
     if game_state.feedback_active:
         draw_feedback_overlay()
+
+
+def draw_book_entry(enemy_key: str, table: dict, rect: pygame.Rect) -> None:
+    draw_text(
+        ENEMY_BOOK_NAMES.get(enemy_key, enemy_key),
+        game_assets.description_font,
+        TEXT_DARK,
+        game_assets.screen,
+        rect.x,
+        rect.y,
+    )
+
+    y = rect.y + 42
+    sections = [
+        ("Forte", table["forte"], (36, 122, 67)),
+        ("Medio", table["medio"], (78, 88, 105)),
+        ("Fraco", table["fraco"], (145, 64, 54)),
+    ]
+    for label, attack_ids, color in sections:
+        draw_text(label, game_assets.help_font, color, game_assets.screen, rect.x, y)
+        y = draw_text_block(
+            format_attack_list(attack_ids),
+            game_assets.help_font,
+            TEXT_DARK,
+            game_assets.screen,
+            rect.x + 95,
+            y,
+            rect.width - 105,
+            center=False,
+            line_gap=3,
+        )
+        y += 14
+
+
+def draw_book_button(rect: pygame.Rect, label: str, enabled: bool = True) -> None:
+    fill = BUTTON_COLOR if enabled else (185, 181, 165)
+    text_color = TEXT_DARK if enabled else (100, 96, 88)
+    pygame.draw.rect(game_assets.screen, fill, rect, border_radius=8)
+    pygame.draw.rect(game_assets.screen, BUTTON_BORDER, rect, 2, border_radius=8)
+    draw_text(label, game_assets.help_font, text_color, game_assets.screen, rect.centerx, rect.centery - 2, center=True)
+
+
+def draw_book_screen() -> None:
+    game_assets.screen.fill((23, 32, 31))
+    book_rect = game_assets.book_open_image.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2))
+    game_assets.screen.blit(game_assets.book_open_image, book_rect)
+
+    draw_text(
+        "Guia Digital Magico",
+        game_assets.title_font,
+        TEXT_DARK,
+        game_assets.screen,
+        SCREEN_WIDTH // 2,
+        book_rect.y + 48,
+        center=True,
+    )
+    draw_text(
+        "Forte vence melhor. Medio ajuda. Fraco ou neutro exige cuidado.",
+        game_assets.help_font,
+        TEXT_DARK,
+        game_assets.screen,
+        SCREEN_WIDTH // 2,
+        book_rect.y + 88,
+        center=True,
+    )
+
+    entries = game_state.get_current_book_entries()
+    entry_rects = [
+        pygame.Rect(book_rect.x + 92, book_rect.y + 142, 330, 340),
+        pygame.Rect(book_rect.x + 490, book_rect.y + 142, 330, 340),
+    ]
+    for index, (enemy_key, table) in enumerate(entries):
+        draw_book_entry(enemy_key, table, entry_rects[index])
+
+    page_count = game_state.get_book_page_count()
+    page_label = f"Pagina {game_state.book_page + 1}/{page_count}"
+    draw_text(page_label, game_assets.help_font, TEXT_DARK, game_assets.screen, SCREEN_WIDTH // 2, book_rect.bottom - 68, center=True)
+
+    draw_book_button(BOOK_PREV_RECT, "Anterior", game_state.book_page > 0)
+    draw_book_button(BOOK_NEXT_RECT, "Proxima", game_state.book_page < page_count - 1)
+    draw_book_button(BOOK_CLOSE_RECT, "Fechar")
 
 
 def draw_conclusion_screen() -> None:
