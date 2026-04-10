@@ -65,6 +65,12 @@ def format_attack_list(attack_ids: list[str]) -> str:
     return ", ".join(get_attack_display_name(attack_id) for attack_id in attack_ids)
 
 
+def format_book_attack_name(attack_ids: list[str]) -> str:
+    if not attack_ids:
+        return "-"
+    return get_attack_display_name(attack_ids[0])
+
+
 def draw_health_bar(surface: pygame.Surface, x: int, y: int) -> None:
     draw_text("Integridade", game_assets.help_font, WHITE, surface, x, y)
     bar_x = x + 140
@@ -461,36 +467,111 @@ def draw_battle_screen() -> None:
         draw_feedback_overlay()
 
 
-def draw_book_entry(enemy_key: str, table: dict, rect: pygame.Rect) -> None:
-    draw_text(
-        ENEMY_BOOK_NAMES.get(enemy_key, enemy_key),
-        game_assets.description_font,
-        TEXT_DARK,
+def get_book_page_areas(book_rect: pygame.Rect) -> tuple[pygame.Rect, pygame.Rect]:
+    margin_x = 78
+    margin_top = 106
+    margin_bottom = 92
+    center_spacing = 0
+
+    page_width = (book_rect.width - margin_x * 2 - center_spacing) // 2
+    page_height = book_rect.height - margin_top - margin_bottom
+
+    left_page = pygame.Rect(
+        book_rect.x + margin_x,
+        book_rect.y + margin_top,
+        page_width,
+        page_height,
+    )
+    right_page = pygame.Rect(
+        left_page.right + center_spacing,
+        book_rect.y + margin_top,
+        page_width,
+        page_height,
+    )
+    return left_page, right_page
+
+
+def draw_book_text(
+    surface: pygame.Surface,
+    text: str,
+    font: pygame.font.Font,
+    color: tuple[int, int, int],
+    x: int,
+    y: int,
+    centered: bool = False,
+) -> pygame.Rect:
+    image = font.render(text, True, color)
+    rect = image.get_rect()
+    if centered:
+        rect.center = (x, y)
+    else:
+        rect.topleft = (x, y)
+    surface.blit(image, rect)
+    return rect
+
+
+def draw_book_value(text: str, font: pygame.font.Font, color: tuple[int, int, int], rect: pygame.Rect) -> None:
+    draw_text_block(
+        text,
+        font,
+        color,
         game_assets.screen,
         rect.x,
         rect.y,
+        rect.width,
+        center=False,
+        line_gap=4,
     )
 
-    y = rect.y + 42
-    sections = [
-        ("Forte", table["forte"], (36, 122, 67)),
-        ("Medio", table["medio"], (78, 88, 105)),
-        ("Fraco", table["fraco"], (145, 64, 54)),
+
+def draw_enemy_book_page(enemy_key: str, table: dict, area: pygame.Rect) -> None:
+    fonts = {
+        "enemy": game_assets.description_font,
+        "label": game_assets.help_font,
+        "item": game_assets.help_font,
+    }
+    colors = {
+        "text": TEXT_DARK,
+        "forte": (34, 116, 60),
+        "medio": (74, 82, 99),
+        "fraco": (138, 54, 45),
+    }
+
+    title_y = area.y + 18
+    draw_book_text(
+        game_assets.screen,
+        ENEMY_BOOK_NAMES.get(enemy_key, enemy_key),
+        fonts["enemy"],
+        colors["text"],
+        area.centerx,
+        title_y,
+        centered=True,
+    )
+
+    block_width = 220 if area.centerx < SCREEN_WIDTH // 2 else 240
+    block_start_x = area.centerx - (block_width // 2)
+    label_x = block_start_x
+    item_offset = 70 if area.centerx < SCREEN_WIDTH // 2 else 76
+    item_x = block_start_x + item_offset
+    item_width = block_width - item_offset
+    line_y = area.y + 78
+    line_spacing = 84
+
+    rows = [
+        ("Forte", format_book_attack_name(table["forte"]), colors["forte"]),
+        ("Medio", format_book_attack_name(table["medio"]), colors["medio"]),
+        ("Fraco", format_book_attack_name(table["fraco"]), colors["fraco"]),
     ]
-    for label, attack_ids, color in sections:
-        draw_text(label, game_assets.help_font, color, game_assets.screen, rect.x, y)
-        y = draw_text_block(
-            format_attack_list(attack_ids),
-            game_assets.help_font,
-            TEXT_DARK,
-            game_assets.screen,
-            rect.x + 95,
-            y,
-            rect.width - 105,
-            center=False,
-            line_gap=3,
-        )
-        y += 14
+
+    for label, item, label_color in rows:
+        draw_book_text(game_assets.screen, label, fonts["label"], label_color, label_x, line_y)
+        item_rect = pygame.Rect(item_x, line_y, item_width, 54)
+        draw_book_value(item, fonts["item"], colors["text"], item_rect)
+        line_y += line_spacing
+
+
+def get_book_entries_for_current_page() -> list[tuple[str, dict]]:
+    return game_state.get_current_book_entries()
 
 
 def draw_book_button(rect: pygame.Rect, label: str, enabled: bool = True) -> None:
@@ -504,38 +585,55 @@ def draw_book_button(rect: pygame.Rect, label: str, enabled: bool = True) -> Non
 def draw_book_screen() -> None:
     game_assets.screen.fill((23, 32, 31))
     book_rect = game_assets.book_open_image.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2))
-    game_assets.screen.blit(game_assets.book_open_image, book_rect)
 
-    draw_text(
+    draw_book_text(
+        game_assets.screen,
         "Guia Digital Magico",
         game_assets.title_font,
-        TEXT_DARK,
-        game_assets.screen,
+        WHITE,
         SCREEN_WIDTH // 2,
-        book_rect.y + 48,
-        center=True,
+        36,
+        centered=True,
     )
-    draw_text(
-        "Forte vence melhor. Medio ajuda. Fraco ou neutro exige cuidado.",
-        game_assets.help_font,
-        TEXT_DARK,
-        game_assets.screen,
-        SCREEN_WIDTH // 2,
-        book_rect.y + 88,
-        center=True,
-    )
+    game_assets.screen.blit(game_assets.book_open_image, book_rect)
 
-    entries = game_state.get_current_book_entries()
-    entry_rects = [
-        pygame.Rect(book_rect.x + 92, book_rect.y + 142, 330, 340),
-        pygame.Rect(book_rect.x + 490, book_rect.y + 142, 330, 340),
-    ]
+    left_page, right_page = get_book_page_areas(book_rect)
+    page_areas = [left_page, right_page]
+    entries = get_book_entries_for_current_page()
     for index, (enemy_key, table) in enumerate(entries):
-        draw_book_entry(enemy_key, table, entry_rects[index])
+        if index >= len(page_areas):
+            break
+        draw_enemy_book_page(enemy_key, table, page_areas[index])
+
+    if len(entries) < 2:
+        empty_area = page_areas[len(entries)]
+        draw_book_text(
+            game_assets.screen,
+            "Fim do guia",
+            game_assets.description_font,
+            TEXT_DARK,
+            empty_area.centerx,
+            empty_area.y + 120,
+            centered=True,
+        )
+        draw_book_value(
+            "Volte quando quiser para consultar as melhores defesas.",
+            game_assets.help_font,
+            TEXT_DARK,
+            pygame.Rect(empty_area.x + 20, empty_area.y + 170, empty_area.width - 40, 90),
+        )
 
     page_count = game_state.get_book_page_count()
     page_label = f"Pagina {game_state.book_page + 1}/{page_count}"
-    draw_text(page_label, game_assets.help_font, TEXT_DARK, game_assets.screen, SCREEN_WIDTH // 2, book_rect.bottom - 68, center=True)
+    draw_book_text(
+        game_assets.screen,
+        page_label,
+        game_assets.help_font,
+        WHITE,
+        SCREEN_WIDTH // 2,
+        BOOK_CLOSE_RECT.y - 24,
+        centered=True,
+    )
 
     draw_book_button(BOOK_PREV_RECT, "Anterior", game_state.book_page > 0)
     draw_book_button(BOOK_NEXT_RECT, "Proxima", game_state.book_page < page_count - 1)
