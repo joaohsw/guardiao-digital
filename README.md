@@ -1,4 +1,4 @@
-# Guardi&atilde;o Digital 2: Exploracao e Combate aos Crimes Digitais
+﻿# Guardi&atilde;o Digital 2: Exploracao e Combate aos Crimes Digitais
 
 Este jogo foi desenvolvido para a disciplina de Computadores e Sociedade (ELC1076), no curso de Sistemas de Informacao da UFSM, usando Python + Pygame.
 
@@ -7,7 +7,7 @@ Agora o projeto possui uma base de exploracao em mapa, com movimentacao do perso
 ## Como executar
 
 ```bash
-py jogo.py
+py main.py
 ```
 
 ## Controles
