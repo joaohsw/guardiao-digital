@@ -137,6 +137,15 @@ def draw_world_screen() -> None:
         2,
     )
 
+    for drop in game_state.collectible_drops:
+        if drop.collected:
+            continue
+        center_x, center_y = drop.world_pos
+        pygame.draw.circle(game_assets.screen, (238, 226, 157), (center_x, center_y), TILE_SIZE // 2 - 12)
+        sprite = game_assets.collectible_images[drop.asset_key]
+        sprite_rect = sprite.get_rect(center=(center_x, center_y))
+        game_assets.screen.blit(sprite, sprite_rect)
+
     for villain in game_state.villains:
         if villain.defeated:
             continue
@@ -161,6 +170,14 @@ def draw_world_screen() -> None:
         game_assets.screen,
         14,
         38,
+    )
+    draw_text(
+        f"Drops coletados: {game_state.collected_drops_count()}/{len(game_state.collectible_drops)}",
+        game_assets.help_font,
+        WHITE,
+        game_assets.screen,
+        14,
+        62,
     )
     draw_text(
         "Mover livremente: segure WASD/Setas | Toque no vilao para iniciar encontro",

@@ -4,6 +4,7 @@ import pygame
 
 import game_assets
 from game_config import (
+    COLLECTIBLE_DROPS,
     ENEMY_COMBAT_PROFILES,
     MAP_COLS,
     MAP_HEIGHT,
@@ -18,7 +19,7 @@ from game_config import (
     WORLD_MAP_LAYOUT,
     crimes,
 )
-from game_models import Villain
+from game_models import CollectibleDrop, Villain
 
 
 def find_start_tile() -> Tuple[int, int]:
@@ -73,6 +74,23 @@ for crime_index, crime_data in enumerate(crimes):
         )
     )
 
+collectible_drops: List[CollectibleDrop] = []
+for drop_data in COLLECTIBLE_DROPS:
+    drop_tile = drop_data["tile_pos"]
+    if not tile_is_walkable(drop_tile[0], drop_tile[1]):
+        continue
+    collectible_drops.append(
+        CollectibleDrop(
+            id=drop_data["id"],
+            name=drop_data["name"],
+            category=drop_data["category"],
+            tile_pos=drop_tile,
+            world_pos=tile_to_center(drop_tile[0], drop_tile[1]),
+            asset_key=drop_data["asset_key"],
+            weapon_type=drop_data.get("weapon_type"),
+        )
+    )
+
 player_health = 5
 max_player_health = 5
 player_position = pygame.Vector2(START_CENTER[0], START_CENTER[1])
@@ -112,6 +130,11 @@ def get_player_hitbox() -> pygame.Rect:
     return build_player_hitbox(player_position.x, player_position.y)
 
 
+def get_collectible_rect(drop: CollectibleDrop) -> pygame.Rect:
+    image = game_assets.collectible_images[drop.asset_key]
+    return image.get_rect(center=drop.world_pos)
+
+
 def hitbox_collides_with_wall(hitbox: pygame.Rect) -> bool:
     if (
         hitbox.left < MAP_OFFSET_X
@@ -147,3 +170,17 @@ def find_villain_touching_player() -> Optional[Villain]:
         if player_hitbox.colliderect(enemy_rect):
             return villain
     return None
+
+
+def find_collectible_touching_player() -> Optional[CollectibleDrop]:
+    player_hitbox = get_player_hitbox()
+    for drop in collectible_drops:
+        if drop.collected:
+            continue
+        if player_hitbox.colliderect(get_collectible_rect(drop)):
+            return drop
+    return None
+
+
+def collected_drops_count() -> int:
+    return sum(1 for drop in collectible_drops if drop.collected)

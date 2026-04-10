@@ -56,6 +56,48 @@ VILLAIN_SPAWNS = [
     (14, 9),
 ]
 
+COLLECTIBLE_DROPS = [
+    {
+        "id": "livro_guia",
+        "name": "Livro do Guardiao",
+        "category": "book",
+        "asset_key": "book",
+        "tile_pos": (4, 4),
+    },
+    {
+        "id": "arma_verificacao",
+        "name": "Verificacao",
+        "category": "weapon",
+        "asset_key": "verificacao",
+        "weapon_type": "verificacao",
+        "tile_pos": (13, 2),
+    },
+    {
+        "id": "arma_protecao",
+        "name": "Protecao",
+        "category": "weapon",
+        "asset_key": "protecao",
+        "weapon_type": "protecao",
+        "tile_pos": (1, 9),
+    },
+    {
+        "id": "arma_privacidade",
+        "name": "Privacidade",
+        "category": "weapon",
+        "asset_key": "privacidade",
+        "weapon_type": "privacidade",
+        "tile_pos": (8, 9),
+    },
+    {
+        "id": "arma_acao",
+        "name": "Acao",
+        "category": "weapon",
+        "asset_key": "acao",
+        "weapon_type": "acao",
+        "tile_pos": (18, 6),
+    },
+]
+
 crimes = [
     {
         "enemy_name": "Ameaca de Phishing",

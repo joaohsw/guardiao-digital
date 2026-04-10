@@ -18,6 +18,8 @@ def reset_progress() -> None:
     game_state.feedback_message = ""
     game_state.feedback_tone = "neutral"
     game_state.encounter_lock_villain_id = None
+    for drop in game_state.collectible_drops:
+        drop.collected = False
     for villain in game_state.villains:
         villain.defeated = False
         villain.health = villain.max_health
@@ -46,7 +48,14 @@ def update_exploration(dt: float) -> None:
     horizontal = int(keys[pygame.K_d] or keys[pygame.K_RIGHT]) - int(keys[pygame.K_a] or keys[pygame.K_LEFT])
     vertical = int(keys[pygame.K_s] or keys[pygame.K_DOWN]) - int(keys[pygame.K_w] or keys[pygame.K_UP])
     move_player_continuous(horizontal, vertical, dt)
+    collect_touched_drop()
     try_trigger_encounter()
+
+
+def collect_touched_drop() -> None:
+    drop = game_state.find_collectible_touching_player()
+    if drop is not None:
+        drop.collected = True
 
 
 def try_trigger_encounter() -> None:

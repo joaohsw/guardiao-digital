@@ -63,6 +63,19 @@ player_image_combat = scale_image_proportional_height(player_source, int(SCREEN_
 player_image_portrait = scale_image_proportional_height(player_source, int(SCREEN_HEIGHT * 0.60))
 player_image_map = scale_image_proportional_height(player_source, TILE_SIZE - 12)
 
+collectible_filenames = {
+    "book": "livro.png",
+    "verificacao": "icone_verificacao.png",
+    "protecao": "icone_protecao.png",
+    "privacidade": "icone_privacidade.png",
+    "acao": "icone_acao.png",
+}
+
+collectible_images = {
+    key: scale_image_proportional_height(load_image(filename, use_alpha=True), TILE_SIZE - 22)
+    for key, filename in collectible_filenames.items()
+}
+
 enemy_filenames = [
     "phishing.png",
     "malware.png",
