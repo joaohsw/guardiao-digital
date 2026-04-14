@@ -27,6 +27,7 @@ description_font = load_font("Minecraftia-Regular.ttf", 17)
 story_font = load_font("Minecraftia-Regular.ttf", 16)
 help_font = load_font("Minecraftia-Regular.ttf", 12)
 small_font = load_font("Minecraftia-Regular.ttf", 10)
+book_content_font = load_font("Minecraftia-Regular.ttf", 14)
 
 
 def load_image(filename: str, use_alpha: bool = False) -> pygame.Surface:

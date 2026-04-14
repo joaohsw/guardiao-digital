@@ -404,6 +404,8 @@ BATTLE_OPTION_RECTS = [
     pygame.Rect(685, 620, 515, 72),
 ]
 
+BATTLE_FLEE_RECT = pygame.Rect(1040, 487, 160, 38)
+
 SUBATTACK_OPTION_RECTS = [
     pygame.Rect(210, 500, 860, 34),
     pygame.Rect(210, 540, 860, 34),

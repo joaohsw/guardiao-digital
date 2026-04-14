@@ -8,6 +8,7 @@ import game_logic
 import game_render
 import game_state
 from game_config import BOOK_CLOSE_RECT, BOOK_HUD_RECT, BOOK_NEXT_RECT, BOOK_PREV_RECT, FPS
+from game_config import BATTLE_FLEE_RECT
 
 
 def main() -> None:
@@ -62,6 +63,8 @@ def main() -> None:
                     if event.type == pygame.KEYDOWN:
                         if event.key == pygame.K_ESCAPE and game_state.selected_attack_category is not None:
                             game_state.selected_attack_category = None
+                        elif event.key == pygame.K_ESCAPE:
+                            game_logic.flee_battle()
                         elif game_state.selected_attack_category is None:
                             selected_index = game_logic.key_to_category_index(event.key)
                             categories = game_logic.get_available_battle_categories()
@@ -73,6 +76,9 @@ def main() -> None:
                             if selected_index is not None and selected_index < len(attacks):
                                 selected_attack = attacks[selected_index]
                     elif event.type == pygame.MOUSEBUTTONDOWN:
+                        if BATTLE_FLEE_RECT.collidepoint(event.pos):
+                            game_logic.flee_battle()
+                            continue
                         if game_state.selected_attack_category is None:
                             game_logic.select_battle_category_at_pos(event.pos)
                         else:

@@ -254,6 +254,16 @@ def resolve_battle_turn(attack: dict) -> None:
         )
 
 
+def flee_battle() -> None:
+    fleeing_villain_id = game_state.active_villain_id
+    game_state.selected_attack_category = None
+    game_state.feedback_active = False
+    game_state.active_villain_id = None
+    game_state.encounter_lock_villain_id = fleeing_villain_id
+    game_state.game_state = "exploring"
+    game_state.show_map_notice("Voce fugiu da luta e voltou ao mapa.", 2.6)
+
+
 def close_feedback_and_continue() -> None:
     previous_villain_id = game_state.active_villain_id
     game_state.feedback_active = False

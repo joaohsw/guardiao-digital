@@ -4,6 +4,7 @@ import game_assets
 import game_state
 from game_config import (
     ATTACK_CATEGORIES,
+    BATTLE_FLEE_RECT,
     BATTLE_OPTION_RECTS,
     BOOK_CLOSE_RECT,
     BOOK_NEXT_RECT,
@@ -393,6 +394,19 @@ def draw_battle_screen() -> None:
         center=False,
     )
 
+    pygame.draw.rect(game_assets.screen, BUTTON_COLOR, BATTLE_FLEE_RECT, border_radius=8)
+    pygame.draw.rect(game_assets.screen, BUTTON_BORDER, BATTLE_FLEE_RECT, 2, border_radius=8)
+    draw_text("Fugir", game_assets.help_font, TEXT_DARK, game_assets.screen, BATTLE_FLEE_RECT.centerx, BATTLE_FLEE_RECT.y + 9, center=True)
+    draw_text(
+        "Voltar ao mapa",
+        game_assets.small_font,
+        TEXT_DARK,
+        game_assets.screen,
+        BATTLE_FLEE_RECT.centerx,
+        BATTLE_FLEE_RECT.y + 22,
+        center=True,
+    )
+
     if game_state.selected_attack_category is None:
         categories = game_state.get_unlocked_categories()
         for index, category in enumerate(categories):
@@ -421,7 +435,7 @@ def draw_battle_screen() -> None:
                 option_rect.x + 92,
                 option_rect.y + 43,
             )
-        footer = "Escolha uma categoria coletada com clique ou teclas 1-4"
+        footer = "Escolha uma categoria com clique/teclas 1-4 | ESC ou botao Fugir volta ao mapa"
     else:
         category_name = ATTACK_CATEGORIES[game_state.selected_attack_category]["name"]
         attacks = game_state.get_unlocked_attacks_for_category(game_state.selected_attack_category)
@@ -450,7 +464,7 @@ def draw_battle_screen() -> None:
                 option_rect.x + 18,
                 option_rect.y + 9,
             )
-        footer = "Escolha um ataque com clique ou teclas 1-5 | ESC volta para categorias"
+        footer = "Escolha um ataque com clique/teclas 1-5 | ESC volta para categorias"
 
     draw_text(
         footer,
@@ -527,8 +541,8 @@ def draw_book_value(text: str, font: pygame.font.Font, color: tuple[int, int, in
 def draw_enemy_book_page(enemy_key: str, table: dict, area: pygame.Rect) -> None:
     fonts = {
         "enemy": game_assets.description_font,
-        "label": game_assets.help_font,
-        "item": game_assets.help_font,
+        "label": game_assets.book_content_font,
+        "item": game_assets.book_content_font,
     }
     colors = {
         "text": TEXT_DARK,
@@ -554,8 +568,8 @@ def draw_enemy_book_page(enemy_key: str, table: dict, area: pygame.Rect) -> None
     item_offset = 70 if area.centerx < SCREEN_WIDTH // 2 else 76
     item_x = block_start_x + item_offset
     item_width = block_width - item_offset
-    line_y = area.y + 78
-    line_spacing = 84
+    line_y = area.y + 74
+    line_spacing = 88
 
     rows = [
         ("Forte", format_book_attack_name(table["forte"]), colors["forte"]),
@@ -565,7 +579,7 @@ def draw_enemy_book_page(enemy_key: str, table: dict, area: pygame.Rect) -> None
 
     for label, item, label_color in rows:
         draw_book_text(game_assets.screen, label, fonts["label"], label_color, label_x, line_y)
-        item_rect = pygame.Rect(item_x, line_y, item_width, 54)
+        item_rect = pygame.Rect(item_x, line_y, item_width, 62)
         draw_book_value(item, fonts["item"], colors["text"], item_rect)
         line_y += line_spacing
 
@@ -618,7 +632,7 @@ def draw_book_screen() -> None:
         )
         draw_book_value(
             "Volte quando quiser para consultar as melhores defesas.",
-            game_assets.help_font,
+            game_assets.book_content_font,
             TEXT_DARK,
             pygame.Rect(empty_area.x + 20, empty_area.y + 170, empty_area.width - 40, 90),
         )
