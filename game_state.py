@@ -1,10 +1,15 @@
-﻿from typing import List, Optional, Tuple
+﻿from typing import List, Optional, Set, Tuple
 
 import pygame
 
 import game_assets
 from game_config import (
+    ATTACK_EFFECTIVENESS,
+    BOOK_PAGE_SIZE,
+    CATEGORY_ATTACKS,
+    COLLECTIBLE_DROPS,
     ENEMY_COMBAT_PROFILES,
+    ENEMY_KEYS,
     MAP_COLS,
     MAP_HEIGHT,
     MAP_OFFSET_X,
@@ -18,7 +23,7 @@ from game_config import (
     WORLD_MAP_LAYOUT,
     crimes,
 )
-from game_models import Villain
+from game_models import CollectibleDrop, Villain
 
 
 def find_start_tile() -> Tuple[int, int]:
@@ -57,11 +62,13 @@ for crime_index, crime_data in enumerate(crimes):
     fallback_pos = START_TILE
     spawn = VILLAIN_SPAWNS[crime_index] if crime_index < len(VILLAIN_SPAWNS) else fallback_pos
     combat_profile = ENEMY_COMBAT_PROFILES[crime_index]
+    enemy_key = ENEMY_KEYS[crime_index] if crime_index < len(ENEMY_KEYS) else f"inimigo_{crime_index}"
     if not tile_is_walkable(spawn[0], spawn[1]):
         spawn = fallback_pos
     villains.append(
         Villain(
             id=crime_index,
+            enemy_key=enemy_key,
             crime=crime_data,
             tile_pos=spawn,
             world_pos=tile_to_center(spawn[0], spawn[1]),
@@ -70,6 +77,23 @@ for crime_index, crime_data in enumerate(crimes):
             weakness=combat_profile["weakness"],
             resistance=combat_profile["resistance"],
             counter_damage=combat_profile["counter_damage"],
+        )
+    )
+
+collectible_drops: List[CollectibleDrop] = []
+for drop_data in COLLECTIBLE_DROPS:
+    drop_tile = drop_data["tile_pos"]
+    if not tile_is_walkable(drop_tile[0], drop_tile[1]):
+        continue
+    collectible_drops.append(
+        CollectibleDrop(
+            id=drop_data["id"],
+            name=drop_data["name"],
+            category=drop_data["category"],
+            tile_pos=drop_tile,
+            world_pos=tile_to_center(drop_tile[0], drop_tile[1]),
+            asset_key=drop_data["asset_key"],
+            weapon_type=drop_data.get("weapon_type"),
         )
     )
 
@@ -83,6 +107,14 @@ feedback_title = ""
 feedback_message = ""
 feedback_tone = "neutral"
 encounter_lock_villain_id: Optional[int] = None
+book_collected = False
+collected_categories: Set[str] = set()
+unlocked_attacks: Set[str] = set()
+selected_attack_category: Optional[str] = None
+last_game_state = "exploring"
+map_notice_message = ""
+map_notice_timer = 0.0
+book_page = 0
 
 
 def get_active_villain() -> Optional[Villain]:
@@ -110,6 +142,11 @@ def build_player_hitbox(x: float, y: float) -> pygame.Rect:
 
 def get_player_hitbox() -> pygame.Rect:
     return build_player_hitbox(player_position.x, player_position.y)
+
+
+def get_collectible_rect(drop: CollectibleDrop) -> pygame.Rect:
+    image = game_assets.collectible_images[drop.asset_key]
+    return image.get_rect(center=drop.world_pos)
 
 
 def hitbox_collides_with_wall(hitbox: pygame.Rect) -> bool:
@@ -147,3 +184,93 @@ def find_villain_touching_player() -> Optional[Villain]:
         if player_hitbox.colliderect(enemy_rect):
             return villain
     return None
+
+
+def show_map_notice(message: str, duration: float = 3.5) -> None:
+    global map_notice_message, map_notice_timer
+    map_notice_message = message
+    map_notice_timer = duration
+
+
+def update_map_notice(dt: float) -> None:
+    global map_notice_message, map_notice_timer
+    if map_notice_timer <= 0:
+        return
+    map_notice_timer = max(0.0, map_notice_timer - dt)
+    if map_notice_timer == 0:
+        map_notice_message = ""
+
+
+def find_collectible_touching_player() -> Optional[CollectibleDrop]:
+    player_hitbox = get_player_hitbox()
+    for drop in collectible_drops:
+        if drop.collected:
+            continue
+        if player_hitbox.colliderect(get_collectible_rect(drop)):
+            return drop
+    return None
+
+
+def collected_drops_count() -> int:
+    return sum(1 for drop in collectible_drops if drop.collected)
+
+
+def collect_drop(drop: CollectibleDrop) -> None:
+    global book_collected
+    drop.collected = True
+    if drop.category == "book":
+        book_collected = True
+        show_map_notice(
+            "Parab\u00e9ns! Voc\u00ea coletou o Guia Digital M\u00e1gico que ajudar\u00e1 voc\u00ea no combate!",
+            4.5,
+        )
+        return
+
+    if drop.category == "weapon" and drop.weapon_type is not None:
+        collected_categories.add(drop.weapon_type)
+        for attack in CATEGORY_ATTACKS.get(drop.weapon_type, []):
+            unlocked_attacks.add(attack["id"])
+        show_map_notice(f"Categoria de ataque coletada: {drop.name}.", 2.8)
+
+
+def has_any_attack() -> bool:
+    return len(unlocked_attacks) > 0
+
+
+def get_unlocked_categories() -> List[str]:
+    return [category for category in CATEGORY_ATTACKS if category in collected_categories]
+
+
+def get_unlocked_attacks_for_category(category: str) -> List[dict]:
+    return [attack for attack in CATEGORY_ATTACKS.get(category, []) if attack["id"] in unlocked_attacks]
+
+
+def get_attack_by_id(attack_id: str) -> Optional[dict]:
+    for attacks in CATEGORY_ATTACKS.values():
+        for attack in attacks:
+            if attack["id"] == attack_id:
+                return attack
+    return None
+
+
+def get_attack_effectiveness(enemy_key: str, attack_id: str) -> str:
+    enemy_table = ATTACK_EFFECTIVENESS.get(enemy_key, {})
+    for effectiveness in ("forte", "medio", "fraco"):
+        if attack_id in enemy_table.get(effectiveness, []):
+            return effectiveness
+    return "neutro"
+
+
+def get_book_entries() -> List[Tuple[str, dict]]:
+    return list(ATTACK_EFFECTIVENESS.items())
+
+
+def get_book_page_count() -> int:
+    entries_count = len(get_book_entries())
+    return max(1, (entries_count + BOOK_PAGE_SIZE - 1) // BOOK_PAGE_SIZE)
+
+
+def get_current_book_entries() -> List[Tuple[str, dict]]:
+    start = book_page * BOOK_PAGE_SIZE
+    end = start + BOOK_PAGE_SIZE
+    return get_book_entries()[start:end]

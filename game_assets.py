@@ -27,6 +27,7 @@ description_font = load_font("Minecraftia-Regular.ttf", 17)
 story_font = load_font("Minecraftia-Regular.ttf", 16)
 help_font = load_font("Minecraftia-Regular.ttf", 12)
 small_font = load_font("Minecraftia-Regular.ttf", 10)
+book_content_font = load_font("Minecraftia-Regular.ttf", 14)
 
 
 def load_image(filename: str, use_alpha: bool = False) -> pygame.Surface:
@@ -62,6 +63,21 @@ player_source = load_image("personagem.png", use_alpha=True)
 player_image_combat = scale_image_proportional_height(player_source, int(SCREEN_HEIGHT * 0.30))
 player_image_portrait = scale_image_proportional_height(player_source, int(SCREEN_HEIGHT * 0.60))
 player_image_map = scale_image_proportional_height(player_source, TILE_SIZE - 12)
+
+collectible_filenames = {
+    "book": "livro.png",
+    "verificacao": "icone_verificacao.png",
+    "protecao": "icone_protecao.png",
+    "privacidade": "icone_privacidade.png",
+    "acao": "icone_acao.png",
+}
+
+collectible_images = {
+    key: scale_image_proportional_height(load_image(filename, use_alpha=True), TILE_SIZE - 22)
+    for key, filename in collectible_filenames.items()
+}
+
+book_open_image = pygame.transform.scale(load_image("livro_aberto.png", use_alpha=True), (900, 600))
 
 enemy_filenames = [
     "phishing.png",

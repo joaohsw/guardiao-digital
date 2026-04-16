@@ -44,16 +44,71 @@ WORLD_MAP_LAYOUT = [
 ]
 
 VILLAIN_SPAWNS = [
-    (4, 1),
-    (10, 1),
-    (17, 1),
-    (2, 3),
-    (8, 3),
-    (18, 9),
-    (9, 5),
+    (3, 6),
+    (9, 3),
+    (10, 5),
+    (8, 8),
+    (10, 9),
+    (13, 4),
     (16, 5),
-    (3, 8),
-    (14, 9),
+    (17, 8),
+    (18, 1),
+    (18, 9),
+]
+
+ENEMY_KEYS = [
+    "phishing",
+    "malware",
+    "senha",
+    "ransomware",
+    "spyware",
+    "adware",
+    "golpe",
+    "cyberstalking",
+    "pirataria",
+    "deepfake",
+]
+
+COLLECTIBLE_DROPS = [
+    {
+        "id": "livro_guia",
+        "name": "Livro do Guardiao",
+        "category": "book",
+        "asset_key": "book",
+        "tile_pos": (4, 1),
+    },
+    {
+        "id": "arma_verificacao",
+        "name": "Verificacao",
+        "category": "weapon",
+        "asset_key": "verificacao",
+        "weapon_type": "verificacao",
+        "tile_pos": (2, 3),
+    },
+    {
+        "id": "arma_protecao",
+        "name": "Protecao",
+        "category": "weapon",
+        "asset_key": "protecao",
+        "weapon_type": "protecao",
+        "tile_pos": (4, 4),
+    },
+    {
+        "id": "arma_privacidade",
+        "name": "Privacidade",
+        "category": "weapon",
+        "asset_key": "privacidade",
+        "weapon_type": "privacidade",
+        "tile_pos": (7, 4),
+    },
+    {
+        "id": "arma_acao",
+        "name": "Acao",
+        "category": "weapon",
+        "asset_key": "acao",
+        "weapon_type": "acao",
+        "tile_pos": (13, 7),
+    },
 ]
 
 crimes = [
@@ -196,6 +251,117 @@ ATTACKS = [
     {"name": "Forca Bruta", "type": "bruteforce", "base_damage": 18},
 ]
 
+ATTACK_CATEGORIES = {
+    "privacidade": {"name": "Privacidade", "asset_key": "privacidade"},
+    "verificacao": {"name": "Verificacao", "asset_key": "verificacao"},
+    "protecao": {"name": "Protecao", "asset_key": "protecao"},
+    "acao": {"name": "Acao", "asset_key": "acao"},
+}
+
+CATEGORY_ATTACKS = {
+    "privacidade": [
+        {"id": "perfil_privado", "name": "Perfil privado"},
+        {"id": "permissoes", "name": "Revisar permissoes"},
+        {"id": "2fa", "name": "Ativar 2FA"},
+        {"id": "ocultar_dados", "name": "Ocultar dados pessoais"},
+    ],
+    "verificacao": [
+        {"id": "verificador_link", "name": "Verificar links"},
+        {"id": "checagem_fonte", "name": "Checar fonte"},
+        {"id": "analise_contexto", "name": "Analisar contexto"},
+        {"id": "verificacao_identidade", "name": "Verificar identidade"},
+    ],
+    "protecao": [
+        {"id": "antivirus", "name": "Antivirus"},
+        {"id": "backup", "name": "Backup seguro"},
+        {"id": "firewall", "name": "Firewall"},
+        {"id": "bloqueador_anuncios", "name": "Bloqueador de anuncios"},
+        {"id": "atualizacao", "name": "Atualizar sistema"},
+    ],
+    "acao": [
+        {"id": "bloquear", "name": "Bloquear agressor"},
+        {"id": "denunciar", "name": "Denunciar"},
+        {"id": "download_oficial", "name": "Download oficial"},
+        {"id": "remover_app_suspeito", "name": "Remover app suspeito"},
+    ],
+}
+
+ATTACK_EFFECTIVENESS = {
+    "adware": {
+        "forte": ["bloqueador_anuncios"],
+        "medio": ["antivirus"],
+        "fraco": ["backup"],
+    },
+    "malware": {
+        "forte": ["antivirus"],
+        "medio": ["atualizacao"],
+        "fraco": ["verificador_link"],
+    },
+    "phishing": {
+        "forte": ["verificador_link"],
+        "medio": ["2fa"],
+        "fraco": ["antivirus"],
+    },
+    "senha": {
+        "forte": ["2fa"],
+        "medio": ["permissoes"],
+        "fraco": ["bloqueador_anuncios"],
+    },
+    "ransomware": {
+        "forte": ["backup"],
+        "medio": ["antivirus"],
+        "fraco": ["bloqueador_anuncios"],
+    },
+    "spyware": {
+        "forte": ["permissoes"],
+        "medio": ["antivirus"],
+        "fraco": ["backup"],
+    },
+    "golpe": {
+        "forte": ["verificacao_identidade"],
+        "medio": ["verificador_link"],
+        "fraco": ["bloqueador_anuncios"],
+    },
+    "deepfake": {
+        "forte": ["checagem_fonte"],
+        "medio": ["analise_contexto"],
+        "fraco": ["antivirus"],
+    },
+    "pirataria": {
+        "forte": ["download_oficial"],
+        "medio": ["antivirus"],
+        "fraco": ["backup"],
+    },
+    "cyberstalking": {
+        "forte": ["perfil_privado"],
+        "medio": ["bloquear"],
+        "fraco": ["antivirus"],
+    },
+}
+
+EFFECTIVENESS_LABELS = {
+    "forte": "forte",
+    "medio": "medio",
+    "fraco": "fraco",
+    "neutro": "neutro",
+}
+
+EFFECTIVENESS_DAMAGE = {
+    "forte": 24,
+    "medio": 14,
+    "fraco": 6,
+    "neutro": 10,
+}
+
+COUNTER_DAMAGE_MODIFIERS = {
+    "forte": -999,
+    "medio": 0,
+    "fraco": 1,
+    "neutro": 0,
+}
+
+NON_FINISHING_EFFECTS = {"neutro"}
+
 ENEMY_COMBAT_PROFILES = [
     {"max_health": 34, "weakness": "analise", "resistance": "defesa", "counter_damage": 1},
     {"max_health": 40, "weakness": "antivirus", "resistance": "bruteforce", "counter_damage": 1},
@@ -237,3 +403,19 @@ BATTLE_OPTION_RECTS = [
     pygame.Rect(80, 620, 515, 72),
     pygame.Rect(685, 620, 515, 72),
 ]
+
+BATTLE_FLEE_RECT = pygame.Rect(1040, 487, 160, 38)
+
+SUBATTACK_OPTION_RECTS = [
+    pygame.Rect(210, 500, 860, 34),
+    pygame.Rect(210, 540, 860, 34),
+    pygame.Rect(210, 580, 860, 34),
+    pygame.Rect(210, 620, 860, 34),
+    pygame.Rect(210, 660, 860, 34),
+]
+
+BOOK_HUD_RECT = pygame.Rect(SCREEN_WIDTH - 74, 12, 56, 56)
+BOOK_CLOSE_RECT = pygame.Rect(SCREEN_WIDTH - 205, 612, 150, 42)
+BOOK_PREV_RECT = pygame.Rect(355, 612, 150, 42)
+BOOK_NEXT_RECT = pygame.Rect(775, 612, 150, 42)
+BOOK_PAGE_SIZE = 2
