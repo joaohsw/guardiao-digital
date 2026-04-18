@@ -104,6 +104,7 @@ for drop_data in COLLECTIBLE_DROPS:
 player_health = 5
 max_player_health = 5
 player_position = pygame.Vector2(START_CENTER[0], START_CENTER[1])
+last_safe_player_position = pygame.Vector2(START_CENTER[0], START_CENTER[1])
 game_state = "menu"
 active_villain_id: Optional[int] = None
 warning_villain_id: Optional[int] = None

@@ -55,9 +55,7 @@ def main() -> None:
 
             elif game_state.game_state == "encounter":
                 if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
-                    game_state.encounter_lock_villain_id = game_state.active_villain_id
-                    game_state.active_villain_id = None
-                    game_state.game_state = "exploring"
+                    game_logic.cancel_encounter()
                 elif (event.type == pygame.KEYDOWN and event.key == pygame.K_RETURN) or event.type == pygame.MOUSEBUTTONDOWN:
                     game_state.selected_attack_category = None
                     game_state.game_state = "battle"

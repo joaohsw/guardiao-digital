@@ -28,6 +28,8 @@ def reset_progress() -> None:
     game_state.player_health = game_state.max_player_health
     game_state.player_position.x = game_state.START_CENTER[0]
     game_state.player_position.y = game_state.START_CENTER[1]
+    game_state.last_safe_player_position.x = game_state.START_CENTER[0]
+    game_state.last_safe_player_position.y = game_state.START_CENTER[1]
     game_state.active_villain_id = None
     game_state.warning_villain_id = None
     game_state.feedback_active = False
@@ -79,23 +81,45 @@ def collect_touched_drop() -> None:
 def try_trigger_encounter() -> None:
     villain = game_state.find_villain_touching_player()
 
-    if game_state.encounter_lock_villain_id is not None:
-        if villain is None or villain.id != game_state.encounter_lock_villain_id:
-            game_state.encounter_lock_villain_id = None
-        else:
-            return
+    if villain is None:
+        game_state.last_safe_player_position.x = game_state.player_position.x
+        game_state.last_safe_player_position.y = game_state.player_position.y
+        game_state.encounter_lock_villain_id = None
+        return
 
-    if villain is not None:
-        if not game_state.has_any_attack():
-            game_state.encounter_lock_villain_id = villain.id
-            game_state.show_map_notice("Encontre pelo menos um tipo de ataque antes de lutar.", 3.2)
-            return
-        if not game_state.can_face_villain(villain):
-            game_state.warning_villain_id = villain.id
-            game_state.game_state = "requirement_warning"
-            return
-        game_state.active_villain_id = villain.id
-        game_state.game_state = "encounter"
+    if game_state.encounter_lock_villain_id == villain.id:
+        return
+
+    game_state.encounter_lock_villain_id = None
+    if not game_state.has_any_attack():
+        game_state.encounter_lock_villain_id = villain.id
+        game_state.show_map_notice("Encontre pelo menos um tipo de ataque antes de lutar.", 3.2)
+        return
+    if not game_state.can_face_villain(villain):
+        game_state.warning_villain_id = villain.id
+        game_state.game_state = "requirement_warning"
+        return
+    game_state.active_villain_id = villain.id
+    game_state.game_state = "encounter"
+
+
+def retreat_from_villain(villain_id: Optional[int], notice: str, duration: float = 2.6) -> None:
+    game_state.selected_attack_category = None
+    game_state.feedback_active = False
+    game_state.active_villain_id = None
+    game_state.warning_villain_id = None
+    game_state.player_position.x = game_state.last_safe_player_position.x
+    game_state.player_position.y = game_state.last_safe_player_position.y
+    game_state.encounter_lock_villain_id = villain_id
+    game_state.game_state = "exploring"
+    game_state.show_map_notice(notice, duration)
+
+
+def cancel_encounter() -> None:
+    retreat_from_villain(
+        game_state.active_villain_id,
+        "Voce recuou do confronto e voltou ao mapa.",
+    )
 
 
 def resolve_requirement_warning(proceed_anyway: bool) -> None:
@@ -112,9 +136,11 @@ def resolve_requirement_warning(proceed_anyway: bool) -> None:
         game_state.game_state = "encounter"
         return
 
-    game_state.encounter_lock_villain_id = warning_villain_id
-    game_state.game_state = "exploring"
-    game_state.show_map_notice("Volte quando estiver mais preparado para esse confronto.", 2.8)
+    retreat_from_villain(
+        warning_villain_id,
+        "Volte quando estiver mais preparado para esse confronto.",
+        2.8,
+    )
 
 
 def calculate_attack_effect(attack: dict, villain: Villain) -> Tuple[int, str]:
@@ -280,12 +306,10 @@ def resolve_battle_turn(attack: dict) -> None:
 
 def flee_battle() -> None:
     fleeing_villain_id = game_state.active_villain_id
-    game_state.selected_attack_category = None
-    game_state.feedback_active = False
-    game_state.active_villain_id = None
-    game_state.encounter_lock_villain_id = fleeing_villain_id
-    game_state.game_state = "exploring"
-    game_state.show_map_notice("Voce fugiu da luta e voltou ao mapa.", 2.6)
+    retreat_from_villain(
+        fleeing_villain_id,
+        "Voce fugiu da luta e voltou ao mapa.",
+    )
 
 
 def close_feedback_and_continue() -> None:
