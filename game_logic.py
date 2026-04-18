@@ -29,6 +29,7 @@ def reset_progress() -> None:
     game_state.player_position.x = game_state.START_CENTER[0]
     game_state.player_position.y = game_state.START_CENTER[1]
     game_state.active_villain_id = None
+    game_state.warning_villain_id = None
     game_state.feedback_active = False
     game_state.feedback_title = ""
     game_state.feedback_message = ""
@@ -89,8 +90,31 @@ def try_trigger_encounter() -> None:
             game_state.encounter_lock_villain_id = villain.id
             game_state.show_map_notice("Encontre pelo menos um tipo de ataque antes de lutar.", 3.2)
             return
+        if not game_state.can_face_villain(villain):
+            game_state.warning_villain_id = villain.id
+            game_state.game_state = "requirement_warning"
+            return
         game_state.active_villain_id = villain.id
         game_state.game_state = "encounter"
+
+
+def resolve_requirement_warning(proceed_anyway: bool) -> None:
+    warning_villain_id = game_state.warning_villain_id
+    game_state.warning_villain_id = None
+
+    if warning_villain_id is None:
+        game_state.game_state = "exploring"
+        return
+
+    if proceed_anyway:
+        game_state.active_villain_id = warning_villain_id
+        game_state.selected_attack_category = None
+        game_state.game_state = "encounter"
+        return
+
+    game_state.encounter_lock_villain_id = warning_villain_id
+    game_state.game_state = "exploring"
+    game_state.show_map_notice("Volte quando estiver mais preparado para esse confronto.", 2.8)
 
 
 def calculate_attack_effect(attack: dict, villain: Villain) -> Tuple[int, str]:

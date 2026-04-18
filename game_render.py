@@ -32,6 +32,8 @@ from game_config import (
     SUBATTACK_OPTION_RECTS,
     TEXT_DARK,
     TILE_SIZE,
+    WARNING_BACK_RECT,
+    WARNING_PROCEED_RECT,
     WALL_COLOR,
     WALL_COLOR_ALT,
     WHITE,
@@ -204,7 +206,8 @@ def draw_world_screen() -> None:
         if drop.collected:
             continue
         center_x, center_y = drop.world_pos
-        pygame.draw.circle(game_assets.screen, (238, 226, 157), (center_x, center_y), TILE_SIZE // 2 - 12)
+        circle_color = (155, 218, 159) if drop.category == "healing" else (238, 226, 157)
+        pygame.draw.circle(game_assets.screen, circle_color, (center_x, center_y), TILE_SIZE // 2 - 12)
         sprite = game_assets.collectible_images[drop.asset_key]
         sprite_rect = sprite.get_rect(center=(center_x, center_y))
         game_assets.screen.blit(sprite, sprite_rect)
@@ -243,7 +246,7 @@ def draw_world_screen() -> None:
         62,
     )
     draw_text(
-        "Mover livremente: segure WASD/Setas | Toque no vilao para iniciar encontro",
+        "Colete drops para liberar viloes especificos | WASD/Setas para explorar",
         game_assets.help_font,
         WHITE,
         game_assets.screen,
@@ -291,6 +294,96 @@ def draw_encounter_screen() -> None:
         center=True,
     )
     draw_book_hud_button()
+
+
+def draw_requirement_warning_screen() -> None:
+    draw_world_screen()
+    villain = game_state.get_warning_villain()
+
+    overlay = pygame.Surface(SCREEN_SIZE, pygame.SRCALPHA)
+    overlay.fill((10, 14, 18, 176))
+    game_assets.screen.blit(overlay, (0, 0))
+
+    warning_panel = pygame.Rect(230, 180, 820, 340)
+    draw_panel(warning_panel, (18, 24, 28, 235))
+
+    draw_text(
+        "Alerta de conhecimento",
+        game_assets.title_font,
+        WHITE,
+        game_assets.screen,
+        warning_panel.centerx,
+        warning_panel.y + 52,
+        center=True,
+    )
+
+    enemy_name = villain.crime["enemy_name"] if villain is not None else "esse inimigo"
+    draw_text_block(
+        f"Voce nao tem o conhecimento necessario para enfrentar {enemy_name}.",
+        game_assets.description_font,
+        WHITE,
+        game_assets.screen,
+        warning_panel.x + 44,
+        warning_panel.y + 126,
+        warning_panel.width - 88,
+        center=False,
+    )
+    draw_text(
+        "Deseja prosseguir mesmo assim?",
+        game_assets.description_font,
+        WHITE,
+        game_assets.screen,
+        warning_panel.centerx,
+        warning_panel.y + 210,
+        center=True,
+    )
+
+    if villain is not None:
+        required_name = game_state.get_required_weapon_name_for_villain(villain)
+        if required_name is not None and not game_state.can_face_villain(villain):
+            draw_text(
+                f"Recomendado: colete {required_name} antes da luta.",
+                game_assets.help_font,
+                WHITE,
+                game_assets.screen,
+                warning_panel.centerx,
+                warning_panel.y + 244,
+                center=True,
+            )
+
+    pygame.draw.rect(game_assets.screen, BUTTON_COLOR, WARNING_PROCEED_RECT, border_radius=8)
+    pygame.draw.rect(game_assets.screen, BUTTON_BORDER, WARNING_PROCEED_RECT, 2, border_radius=8)
+    draw_text(
+        "Prosseguir",
+        game_assets.help_font,
+        TEXT_DARK,
+        game_assets.screen,
+        WARNING_PROCEED_RECT.centerx,
+        WARNING_PROCEED_RECT.centery - 1,
+        center=True,
+    )
+
+    pygame.draw.rect(game_assets.screen, BUTTON_COLOR, WARNING_BACK_RECT, border_radius=8)
+    pygame.draw.rect(game_assets.screen, BUTTON_BORDER, WARNING_BACK_RECT, 2, border_radius=8)
+    draw_text(
+        "Voltar",
+        game_assets.help_font,
+        TEXT_DARK,
+        game_assets.screen,
+        WARNING_BACK_RECT.centerx,
+        WARNING_BACK_RECT.centery - 1,
+        center=True,
+    )
+
+    draw_text(
+        "ENTER: prosseguir | ESC: voltar",
+        game_assets.help_font,
+        WHITE,
+        game_assets.screen,
+        warning_panel.centerx,
+        warning_panel.bottom - 26,
+        center=True,
+    )
 
 
 def draw_enemy_health_bar(surface: pygame.Surface, villain: Villain, x: int, y: int, width: int = 320) -> None:

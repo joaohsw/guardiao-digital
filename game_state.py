@@ -4,12 +4,14 @@ import pygame
 
 import game_assets
 from game_config import (
+    ATTACK_CATEGORIES,
     ATTACK_EFFECTIVENESS,
     BOOK_PAGE_SIZE,
     CATEGORY_ATTACKS,
     COLLECTIBLE_DROPS,
     ENEMY_COMBAT_PROFILES,
     ENEMY_KEYS,
+    ENEMY_REQUIRED_WEAPON,
     MAP_COLS,
     MAP_HEIGHT,
     MAP_OFFSET_X,
@@ -77,6 +79,7 @@ for crime_index, crime_data in enumerate(crimes):
             weakness=combat_profile["weakness"],
             resistance=combat_profile["resistance"],
             counter_damage=combat_profile["counter_damage"],
+            required_weapon_type=ENEMY_REQUIRED_WEAPON.get(enemy_key),
         )
     )
 
@@ -94,6 +97,7 @@ for drop_data in COLLECTIBLE_DROPS:
             world_pos=tile_to_center(drop_tile[0], drop_tile[1]),
             asset_key=drop_data["asset_key"],
             weapon_type=drop_data.get("weapon_type"),
+            heal_amount=drop_data.get("heal_amount", 0),
         )
     )
 
@@ -102,6 +106,7 @@ max_player_health = 5
 player_position = pygame.Vector2(START_CENTER[0], START_CENTER[1])
 game_state = "menu"
 active_villain_id: Optional[int] = None
+warning_villain_id: Optional[int] = None
 feedback_active = False
 feedback_title = ""
 feedback_message = ""
@@ -117,13 +122,38 @@ map_notice_timer = 0.0
 book_page = 0
 
 
-def get_active_villain() -> Optional[Villain]:
-    if active_villain_id is None:
+def get_villain_by_id(villain_id: Optional[int]) -> Optional[Villain]:
+    if villain_id is None:
         return None
     for villain in villains:
-        if villain.id == active_villain_id:
+        if villain.id == villain_id:
             return villain
     return None
+
+
+def get_active_villain() -> Optional[Villain]:
+    return get_villain_by_id(active_villain_id)
+
+
+def get_warning_villain() -> Optional[Villain]:
+    return get_villain_by_id(warning_villain_id)
+
+
+def get_required_weapon_name_for_villain(villain: Villain) -> Optional[str]:
+    required_type = villain.required_weapon_type
+    if required_type is None:
+        return None
+    category_data = ATTACK_CATEGORIES.get(required_type)
+    if category_data is None:
+        return required_type.replace("_", " ").title()
+    return category_data["name"]
+
+
+def can_face_villain(villain: Villain) -> bool:
+    required_type = villain.required_weapon_type
+    if required_type is None:
+        return True
+    return required_type in collected_categories
 
 
 def remaining_villains_count() -> int:
@@ -216,7 +246,21 @@ def collected_drops_count() -> int:
 
 
 def collect_drop(drop: CollectibleDrop) -> None:
-    global book_collected
+    global book_collected, player_health
+    if drop.category == "healing":
+        if player_health >= max_player_health:
+            full_health_notice = "Integridade ja esta no maximo. Volte quando precisar de cura."
+            if map_notice_message != full_health_notice:
+                show_map_notice(full_health_notice, 2.8)
+            return
+        drop.collected = True
+        healed_amount = max(1, drop.heal_amount)
+        previous_health = player_health
+        player_health = min(max_player_health, player_health + healed_amount)
+        recovered = player_health - previous_health
+        show_map_notice(f"Integridade recuperada em +{recovered}.", 2.8)
+        return
+
     drop.collected = True
     if drop.category == "book":
         book_collected = True

@@ -7,7 +7,15 @@ import game_assets
 import game_logic
 import game_render
 import game_state
-from game_config import BOOK_CLOSE_RECT, BOOK_HUD_RECT, BOOK_NEXT_RECT, BOOK_PREV_RECT, FPS
+from game_config import (
+    BOOK_CLOSE_RECT,
+    BOOK_HUD_RECT,
+    BOOK_NEXT_RECT,
+    BOOK_PREV_RECT,
+    FPS,
+    WARNING_BACK_RECT,
+    WARNING_PROCEED_RECT,
+)
 from game_config import BATTLE_FLEE_RECT
 
 
@@ -53,6 +61,18 @@ def main() -> None:
                 elif (event.type == pygame.KEYDOWN and event.key == pygame.K_RETURN) or event.type == pygame.MOUSEBUTTONDOWN:
                     game_state.selected_attack_category = None
                     game_state.game_state = "battle"
+
+            elif game_state.game_state == "requirement_warning":
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_RETURN:
+                        game_logic.resolve_requirement_warning(True)
+                    elif event.key == pygame.K_ESCAPE:
+                        game_logic.resolve_requirement_warning(False)
+                elif event.type == pygame.MOUSEBUTTONDOWN:
+                    if WARNING_PROCEED_RECT.collidepoint(event.pos):
+                        game_logic.resolve_requirement_warning(True)
+                    elif WARNING_BACK_RECT.collidepoint(event.pos):
+                        game_logic.resolve_requirement_warning(False)
 
             elif game_state.game_state == "battle":
                 if game_state.feedback_active:
@@ -122,6 +142,8 @@ def main() -> None:
             game_render.draw_world_screen()
         elif game_state.game_state == "encounter":
             game_render.draw_encounter_screen()
+        elif game_state.game_state == "requirement_warning":
+            game_render.draw_requirement_warning_screen()
         elif game_state.game_state == "battle":
             game_render.draw_battle_screen()
         elif game_state.game_state == "book":
