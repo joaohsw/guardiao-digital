@@ -51,6 +51,28 @@ def scale_image_proportional_height(image: pygame.Surface, target_height: int) -
     return pygame.transform.smoothscale(image, (target_width, target_height))
 
 
+def create_healing_icon(size: int) -> pygame.Surface:
+    icon = pygame.Surface((size, size), pygame.SRCALPHA)
+    center = size // 2
+    radius = max(8, size // 2 - 2)
+    pygame.draw.circle(icon, (82, 166, 94), (center, center), radius)
+    plus_thickness = max(4, size // 7)
+    plus_width = max(10, size // 2)
+    pygame.draw.rect(
+        icon,
+        (243, 248, 243),
+        pygame.Rect(center - plus_width // 2, center - plus_thickness // 2, plus_width, plus_thickness),
+        border_radius=2,
+    )
+    pygame.draw.rect(
+        icon,
+        (243, 248, 243),
+        pygame.Rect(center - plus_thickness // 2, center - plus_width // 2, plus_thickness, plus_width),
+        border_radius=2,
+    )
+    return icon
+
+
 combate_bg = pygame.transform.scale(load_image("combate.png"), SCREEN_SIZE)
 menu_image = pygame.transform.scale(load_image("menu.png"), SCREEN_SIZE)
 vitoria_image = pygame.transform.scale(load_image("vitoria.png"), SCREEN_SIZE)
@@ -76,6 +98,7 @@ collectible_images = {
     key: scale_image_proportional_height(load_image(filename, use_alpha=True), TILE_SIZE - 22)
     for key, filename in collectible_filenames.items()
 }
+collectible_images["cura"] = create_healing_icon(TILE_SIZE - 22)
 
 book_open_image = pygame.transform.scale(load_image("livro_aberto.png", use_alpha=True), (900, 600))
 

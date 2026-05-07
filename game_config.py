@@ -46,11 +46,11 @@ WORLD_MAP_LAYOUT = [
 VILLAIN_SPAWNS = [
     (3, 6),
     (9, 3),
-    (10, 5),
     (8, 8),
     (10, 9),
+    (14, 9),
     (13, 4),
-    (16, 5),
+    (7, 5),
     (17, 8),
     (18, 1),
     (18, 9),
@@ -68,6 +68,19 @@ ENEMY_KEYS = [
     "pirataria",
     "deepfake",
 ]
+
+ENEMY_REQUIRED_WEAPON = {
+    "phishing": "verificacao",
+    "malware": "protecao",
+    "senha": "privacidade",
+    "ransomware": "protecao",
+    "spyware": "privacidade",
+    "adware": "protecao",
+    "golpe": "verificacao",
+    "cyberstalking": "acao",
+    "pirataria": "acao",
+    "deepfake": "verificacao",
+}
 
 COLLECTIBLE_DROPS = [
     {
@@ -91,7 +104,7 @@ COLLECTIBLE_DROPS = [
         "category": "weapon",
         "asset_key": "protecao",
         "weapon_type": "protecao",
-        "tile_pos": (4, 4),
+        "tile_pos": (8, 3),
     },
     {
         "id": "arma_privacidade",
@@ -99,7 +112,7 @@ COLLECTIBLE_DROPS = [
         "category": "weapon",
         "asset_key": "privacidade",
         "weapon_type": "privacidade",
-        "tile_pos": (7, 4),
+        "tile_pos": (10, 5),
     },
     {
         "id": "arma_acao",
@@ -108,6 +121,38 @@ COLLECTIBLE_DROPS = [
         "asset_key": "acao",
         "weapon_type": "acao",
         "tile_pos": (13, 7),
+    },
+    {
+        "id": "kit_recuperacao",
+        "name": "Kit de Recuperacao",
+        "category": "healing",
+        "asset_key": "cura",
+        "heal_amount": 2,
+        "tile_pos": (5, 9),
+    },
+    {
+        "id": "kit_recuperacao_norte",
+        "name": "Kit de Recuperacao",
+        "category": "healing",
+        "asset_key": "cura",
+        "heal_amount": 2,
+        "tile_pos": (11, 3),
+    },
+    {
+        "id": "kit_recuperacao_leste",
+        "name": "Kit de Recuperacao",
+        "category": "healing",
+        "asset_key": "cura",
+        "heal_amount": 2,
+        "tile_pos": (16, 6),
+    },
+    {
+        "id": "kit_recuperacao_oeste",
+        "name": "Kit de Recuperacao",
+        "category": "healing",
+        "asset_key": "cura",
+        "heal_amount": 2,
+        "tile_pos": (2, 8),
     },
 ]
 
@@ -405,6 +450,8 @@ BATTLE_OPTION_RECTS = [
 ]
 
 BATTLE_FLEE_RECT = pygame.Rect(1040, 487, 160, 38)
+WARNING_PROCEED_RECT = pygame.Rect(420, 442, 200, 46)
+WARNING_BACK_RECT = pygame.Rect(660, 442, 200, 46)
 
 SUBATTACK_OPTION_RECTS = [
     pygame.Rect(210, 500, 860, 34),

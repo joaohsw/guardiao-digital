@@ -14,6 +14,7 @@ class Villain:
     weakness: str
     resistance: str
     counter_damage: int
+    required_weapon_type: Optional[str] = None
     defeated: bool = False
 
 
@@ -26,4 +27,5 @@ class CollectibleDrop:
     world_pos: Tuple[int, int]
     asset_key: str
     weapon_type: Optional[str] = None
+    heal_amount: int = 0
     collected: bool = False
