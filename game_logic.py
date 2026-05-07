@@ -91,10 +91,6 @@ def try_trigger_encounter() -> None:
         return
 
     game_state.encounter_lock_villain_id = None
-    if not game_state.has_any_attack():
-        game_state.encounter_lock_villain_id = villain.id
-        game_state.show_map_notice("Encontre pelo menos um tipo de ataque antes de lutar.", 3.2)
-        return
     if not game_state.can_face_villain(villain):
         game_state.warning_villain_id = villain.id
         game_state.game_state = "requirement_warning"
@@ -103,14 +99,19 @@ def try_trigger_encounter() -> None:
     game_state.game_state = "encounter"
 
 
-def retreat_from_villain(villain_id: Optional[int], notice: str, duration: float = 2.6) -> None:
+def retreat_from_villain(
+    villain_id: Optional[int],
+    notice: str,
+    duration: float = 2.6,
+    keep_encounter_lock: bool = True,
+) -> None:
     game_state.selected_attack_category = None
     game_state.feedback_active = False
     game_state.active_villain_id = None
     game_state.warning_villain_id = None
     game_state.player_position.x = game_state.last_safe_player_position.x
     game_state.player_position.y = game_state.last_safe_player_position.y
-    game_state.encounter_lock_villain_id = villain_id
+    game_state.encounter_lock_villain_id = villain_id if keep_encounter_lock else None
     game_state.game_state = "exploring"
     game_state.show_map_notice(notice, duration)
 
@@ -119,6 +120,7 @@ def cancel_encounter() -> None:
     retreat_from_villain(
         game_state.active_villain_id,
         "Voce recuou do confronto e voltou ao mapa.",
+        keep_encounter_lock=False,
     )
 
 
@@ -140,7 +142,13 @@ def resolve_requirement_warning(proceed_anyway: bool) -> None:
         warning_villain_id,
         "Volte quando estiver mais preparado para esse confronto.",
         2.8,
+        keep_encounter_lock=False,
     )
+
+
+def start_battle() -> None:
+    game_state.selected_attack_category = None
+    game_state.game_state = "battle"
 
 
 def calculate_attack_effect(attack: dict, villain: Villain) -> Tuple[int, str]:
@@ -158,6 +166,24 @@ def calculate_effective_damage(villain: Villain, damage: int, effectiveness: str
 def calculate_counter_damage(villain: Villain, effectiveness: str) -> int:
     modifier = COUNTER_DAMAGE_MODIFIERS.get(effectiveness, 0)
     return max(0, villain.counter_damage + modifier)
+
+
+def build_non_ideal_attack_warning(villain: Villain) -> str:
+    ideal_attack_ids = game_state.ATTACK_EFFECTIVENESS.get(villain.enemy_key, {}).get("forte", [])
+    if not ideal_attack_ids:
+        return "Aviso: esse ataque nao e o ideal para esse inimigo."
+
+    ideal_attack_names = []
+    for attack_id in ideal_attack_ids:
+        ideal_attack = game_state.get_attack_by_id(attack_id)
+        if ideal_attack is None:
+            ideal_attack_names.append(attack_id.replace("_", " "))
+        else:
+            ideal_attack_names.append(ideal_attack["name"])
+    return (
+        "Aviso: esse ataque nao e o ideal para esse inimigo. "
+        f"Melhor opcao: {', '.join(ideal_attack_names)}."
+    )
 
 
 def open_battle_feedback(title: str, message: str, tone: str) -> None:
@@ -271,6 +297,10 @@ def resolve_battle_turn(attack: dict) -> None:
     else:
         attack_result = f"{attack['name']} teve efeito parcial. Ataques neutros nao finalizam a ameaca sozinhos."
 
+    if effectiveness != "forte":
+        warning_message = build_non_ideal_attack_warning(villain)
+        attack_result = f"{warning_message} {attack_result}"
+
     if villain.health <= 0:
         villain.defeated = True
         open_battle_feedback(
@@ -309,6 +339,7 @@ def flee_battle() -> None:
     retreat_from_villain(
         fleeing_villain_id,
         "Voce fugiu da luta e voltou ao mapa.",
+        keep_encounter_lock=False,
     )
 
 

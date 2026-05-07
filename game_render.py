@@ -307,8 +307,13 @@ def draw_requirement_warning_screen() -> None:
     warning_panel = pygame.Rect(230, 180, 820, 340)
     draw_panel(warning_panel, (18, 24, 28, 235))
 
+    enemy_name = villain.crime["enemy_name"] if villain is not None else "esse inimigo"
+    title = "Alerta de conhecimento"
+    message = f"Voce nao tem o conhecimento necessario para enfrentar {enemy_name}."
+    prompt = "Deseja prosseguir mesmo assim?"
+
     draw_text(
-        "Alerta de conhecimento",
+        title,
         game_assets.title_font,
         WHITE,
         game_assets.screen,
@@ -317,9 +322,8 @@ def draw_requirement_warning_screen() -> None:
         center=True,
     )
 
-    enemy_name = villain.crime["enemy_name"] if villain is not None else "esse inimigo"
     draw_text_block(
-        f"Voce nao tem o conhecimento necessario para enfrentar {enemy_name}.",
+        message,
         game_assets.description_font,
         WHITE,
         game_assets.screen,
@@ -329,7 +333,7 @@ def draw_requirement_warning_screen() -> None:
         center=False,
     )
     draw_text(
-        "Deseja prosseguir mesmo assim?",
+        prompt,
         game_assets.description_font,
         WHITE,
         game_assets.screen,

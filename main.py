@@ -57,8 +57,7 @@ def main() -> None:
                 if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
                     game_logic.cancel_encounter()
                 elif (event.type == pygame.KEYDOWN and event.key == pygame.K_RETURN) or event.type == pygame.MOUSEBUTTONDOWN:
-                    game_state.selected_attack_category = None
-                    game_state.game_state = "battle"
+                    game_logic.start_battle()
 
             elif game_state.game_state == "requirement_warning":
                 if event.type == pygame.KEYDOWN:
