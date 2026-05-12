@@ -5,6 +5,16 @@ SCREEN_HEIGHT = 720
 SCREEN_SIZE = (SCREEN_WIDTH, SCREEN_HEIGHT)
 FPS = 60
 
+MAIN_16_9_RESOLUTIONS = [
+    (1024, 576),
+    (1280, 720),
+    (1366, 768),
+    (1600, 900),
+    (1920, 1080),
+    (2560, 1440),
+    (3840, 2160),
+]
+
 ASSETS_PATH = "assets"
 WINDOW_TITLE = "Guardi\u00e3o Digital 2"
 TILE_SIZE = 64

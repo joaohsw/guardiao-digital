@@ -1,4 +1,6 @@
 ﻿import pygame
+from typing import Optional
+
 
 import game_assets
 import game_state
@@ -117,23 +119,55 @@ def draw_map_notice() -> None:
     )
 
 
+def draw_back_image_button(rect: pygame.Rect, hovered: bool = False) -> None:
+    button_image = game_assets.get_back_button_image(rect.size)
+    game_assets.screen.blit(button_image, rect)
+    if hovered:
+        hover_overlay = pygame.Surface(rect.size, pygame.SRCALPHA)
+        hover_overlay.fill((255, 255, 255, 34))
+        game_assets.screen.blit(hover_overlay, rect.topleft)
+
+
 def get_settings_panel_rect() -> pygame.Rect:
-    return pygame.Rect(290, 130, 700, 430)
+    return pygame.Rect(166, 76, 948, 568)
 
 
 def get_settings_fullscreen_rect() -> pygame.Rect:
     panel = get_settings_panel_rect()
-    return pygame.Rect(panel.x + 70, panel.y + 150, panel.width - 140, 92)
+    return pygame.Rect(panel.x + 84, panel.y + 96, panel.width - 168, 66)
+
+
+def get_settings_resolution_toggle_rect() -> pygame.Rect:
+    panel = get_settings_panel_rect()
+    return pygame.Rect(panel.x + 84, panel.y + 206, panel.width - 168, 56)
+
+
+def get_settings_resolution_rects() -> list[tuple[tuple[int, int], pygame.Rect]]:
+    toggle_rect = get_settings_resolution_toggle_rect()
+    option_height = 34
+    option_gap = 4
+    resolution_buttons: list[tuple[tuple[int, int], pygame.Rect]] = []
+    for index, resolution in enumerate(game_assets.resolution_options):
+        y = toggle_rect.bottom + 8 + index * (option_height + option_gap)
+        resolution_buttons.append((resolution, pygame.Rect(toggle_rect.x, y, toggle_rect.width, option_height)))
+    return resolution_buttons
+
+
+def get_settings_resolution_at_pos(pos: tuple[int, int]) -> Optional[tuple[int, int]]:
+    for resolution, rect in get_settings_resolution_rects():
+        if rect.collidepoint(pos):
+            return resolution
+    return None
 
 
 def get_settings_back_rect() -> pygame.Rect:
     panel = get_settings_panel_rect()
-    return pygame.Rect(panel.centerx - 130, panel.bottom - 92, 260, 56)
+    return pygame.Rect(panel.centerx - 150, panel.bottom - 84, 300, 54)
 
 
 def draw_menu_screen() -> None:
     game_assets.screen.blit(game_assets.menu_image, (0, 0))
-    mouse_pos = pygame.mouse.get_pos()
+    mouse_pos = game_assets.get_virtual_mouse_pos()
 
     for button_image, button_rect in (
         (game_assets.menu_play_button_image, game_assets.menu_play_button_rect),
@@ -145,29 +179,34 @@ def draw_menu_screen() -> None:
 
 
 def draw_settings_screen() -> None:
-    game_assets.screen.blit(game_assets.menu_image, (0, 0))
+    game_assets.screen.blit(game_assets.settings_background, (0, 0))
+    mouse_pos = game_assets.get_virtual_mouse_pos()
 
     overlay = pygame.Surface(SCREEN_SIZE, pygame.SRCALPHA)
-    overlay.fill((7, 13, 16, 195))
+    overlay.fill((6, 12, 15, 82))
     game_assets.screen.blit(overlay, (0, 0))
 
     panel = get_settings_panel_rect()
-    draw_panel(panel, (18, 24, 28, 235))
+    draw_panel(panel, (10, 17, 21, 222))
+    pygame.draw.rect(game_assets.screen, (83, 195, 202), panel, 2, border_radius=12)
 
-    draw_text("Configuracoes", game_assets.title_font, WHITE, game_assets.screen, panel.centerx, panel.y + 46, center=True)
+    draw_text("Configuracoes", game_assets.title_font, WHITE, game_assets.screen, panel.centerx, panel.y + 40, center=True)
     draw_text(
         "Ajustes de exibicao",
         game_assets.help_font,
         WHITE,
         game_assets.screen,
         panel.centerx,
-        panel.y + 78,
+        panel.y + 72,
         center=True,
     )
 
     fullscreen_rect = get_settings_fullscreen_rect()
     is_fullscreen = game_assets.fullscreen
-    fill_color = (44, 98, 108) if is_fullscreen else BUTTON_COLOR
+    fullscreen_hovered = fullscreen_rect.collidepoint(mouse_pos)
+    fill_color = (41, 112, 120) if is_fullscreen else BUTTON_COLOR
+    if fullscreen_hovered and not is_fullscreen:
+        fill_color = (239, 235, 216)
     text_color = WHITE if is_fullscreen else TEXT_DARK
     status_text = "Ligado" if is_fullscreen else "Desligado"
 
@@ -179,7 +218,7 @@ def draw_settings_screen() -> None:
         text_color,
         game_assets.screen,
         fullscreen_rect.centerx,
-        fullscreen_rect.centery - 2,
+        fullscreen_rect.centery - 8,
         center=True,
     )
     draw_text(
@@ -188,21 +227,72 @@ def draw_settings_screen() -> None:
         text_color,
         game_assets.screen,
         fullscreen_rect.centerx,
-        fullscreen_rect.centery + 27,
+        fullscreen_rect.centery + 17,
         center=True,
     )
 
-    back_rect = get_settings_back_rect()
-    pygame.draw.rect(game_assets.screen, BUTTON_COLOR, back_rect, border_radius=10)
-    pygame.draw.rect(game_assets.screen, BUTTON_BORDER, back_rect, 2, border_radius=10)
-    draw_text("Voltar", game_assets.description_font, TEXT_DARK, game_assets.screen, back_rect.centerx, back_rect.centery - 1, center=True)
+    draw_text("Resolucao", game_assets.description_font, WHITE, game_assets.screen, panel.x + 92, panel.y + 184)
+
+    toggle_rect = get_settings_resolution_toggle_rect()
+    toggle_hovered = toggle_rect.collidepoint(mouse_pos)
+    toggle_fill = (237, 233, 214) if toggle_hovered else BUTTON_COLOR
+    pygame.draw.rect(game_assets.screen, toggle_fill, toggle_rect, border_radius=10)
+    pygame.draw.rect(game_assets.screen, BUTTON_BORDER, toggle_rect, 2, border_radius=10)
+
+    current_resolution = game_assets.current_resolution
+    current_resolution_text = f"{current_resolution[0]} x {current_resolution[1]}"
     draw_text(
-        "ESC para retornar",
+        current_resolution_text,
+        game_assets.description_font,
+        TEXT_DARK,
+        game_assets.screen,
+        toggle_rect.x + 20,
+        toggle_rect.centery - 14,
+    )
+    arrow_text = "^" if game_state.settings_resolution_dropdown_open else "v"
+    draw_text(
+        arrow_text,
+        game_assets.description_font,
+        TEXT_DARK,
+        game_assets.screen,
+        toggle_rect.right - 24,
+        toggle_rect.centery - 14,
+        center=True,
+    )
+
+    if game_state.settings_resolution_dropdown_open:
+        for resolution, rect in get_settings_resolution_rects():
+            selected = resolution == current_resolution
+            hovered = rect.collidepoint(mouse_pos)
+            if selected:
+                button_fill = (40, 118, 126)
+                button_text = WHITE
+            else:
+                button_fill = BUTTON_COLOR
+                button_text = TEXT_DARK
+                if hovered:
+                    button_fill = (238, 234, 214)
+
+            pygame.draw.rect(game_assets.screen, button_fill, rect, border_radius=8)
+            pygame.draw.rect(game_assets.screen, BUTTON_BORDER, rect, 2, border_radius=8)
+            draw_text(
+                f"{resolution[0]} x {resolution[1]}",
+                game_assets.help_font,
+                button_text,
+                game_assets.screen,
+                rect.x + 18,
+                rect.centery - 8,
+            )
+
+    back_rect = get_settings_back_rect()
+    draw_back_image_button(back_rect, back_rect.collidepoint(mouse_pos))
+    draw_text(
+        "ESC para retornar | F11 para tela cheia",
         game_assets.help_font,
         WHITE,
         game_assets.screen,
         panel.centerx,
-        panel.bottom - 20,
+        panel.bottom - 18,
         center=True,
     )
 
@@ -423,17 +513,7 @@ def draw_requirement_warning_screen() -> None:
         center=True,
     )
 
-    pygame.draw.rect(game_assets.screen, BUTTON_COLOR, WARNING_BACK_RECT, border_radius=8)
-    pygame.draw.rect(game_assets.screen, BUTTON_BORDER, WARNING_BACK_RECT, 2, border_radius=8)
-    draw_text(
-        "Voltar",
-        game_assets.help_font,
-        TEXT_DARK,
-        game_assets.screen,
-        WARNING_BACK_RECT.centerx,
-        WARNING_BACK_RECT.centery - 1,
-        center=True,
-    )
+    draw_back_image_button(WARNING_BACK_RECT, WARNING_BACK_RECT.collidepoint(game_assets.get_virtual_mouse_pos()))
 
     draw_text(
         "ENTER: prosseguir | ESC: voltar",
@@ -547,18 +627,7 @@ def draw_battle_screen() -> None:
         center=False,
     )
 
-    pygame.draw.rect(game_assets.screen, BUTTON_COLOR, BATTLE_FLEE_RECT, border_radius=8)
-    pygame.draw.rect(game_assets.screen, BUTTON_BORDER, BATTLE_FLEE_RECT, 2, border_radius=8)
-    draw_text("Fugir", game_assets.help_font, TEXT_DARK, game_assets.screen, BATTLE_FLEE_RECT.centerx, BATTLE_FLEE_RECT.y + 9, center=True)
-    draw_text(
-        "Voltar ao mapa",
-        game_assets.small_font,
-        TEXT_DARK,
-        game_assets.screen,
-        BATTLE_FLEE_RECT.centerx,
-        BATTLE_FLEE_RECT.y + 22,
-        center=True,
-    )
+    draw_back_image_button(BATTLE_FLEE_RECT, BATTLE_FLEE_RECT.collidepoint(game_assets.get_virtual_mouse_pos()))
 
     if game_state.selected_attack_category is None:
         categories = game_state.get_unlocked_categories()
@@ -588,7 +657,7 @@ def draw_battle_screen() -> None:
                 option_rect.x + 92,
                 option_rect.y + 43,
             )
-        footer = "Escolha uma categoria com clique/teclas 1-4 | ESC ou botao Fugir volta ao mapa"
+        footer = "Escolha uma categoria com clique/teclas 1-4 | ESC ou botao Voltar volta ao mapa"
     else:
         category_name = ATTACK_CATEGORIES[game_state.selected_attack_category]["name"]
         attacks = game_state.get_unlocked_attacks_for_category(game_state.selected_attack_category)
@@ -742,6 +811,9 @@ def get_book_entries_for_current_page() -> list[tuple[str, dict]]:
 
 
 def draw_book_button(rect: pygame.Rect, label: str, enabled: bool = True) -> None:
+    if label == "Fechar":
+        draw_back_image_button(rect, rect.collidepoint(game_assets.get_virtual_mouse_pos()))
+        return
     fill = BUTTON_COLOR if enabled else (185, 181, 165)
     text_color = TEXT_DARK if enabled else (100, 96, 88)
     pygame.draw.rect(game_assets.screen, fill, rect, border_radius=8)
