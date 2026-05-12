@@ -121,6 +121,11 @@ last_game_state = "exploring"
 map_notice_message = ""
 map_notice_timer = 0.0
 book_page = 0
+PLAYER_WALK_FRAME_DURATION = 0.10
+PLAYER_IDLE_FRAME_INDEX = 0
+player_walk_frame_index = PLAYER_IDLE_FRAME_INDEX
+player_walk_frame_timer = 0.0
+player_facing_left = False
 
 
 def get_villain_by_id(villain_id: Optional[int]) -> Optional[Villain]:
@@ -178,6 +183,47 @@ def get_player_hitbox() -> pygame.Rect:
 def get_collectible_rect(drop: CollectibleDrop) -> pygame.Rect:
     image = game_assets.collectible_images[drop.asset_key]
     return image.get_rect(center=drop.world_pos)
+
+
+def reset_player_animation() -> None:
+    global player_walk_frame_index, player_walk_frame_timer, player_facing_left
+    player_walk_frame_index = PLAYER_IDLE_FRAME_INDEX
+    player_walk_frame_timer = 0.0
+    player_facing_left = False
+
+
+def update_player_walk_animation(movement: pygame.Vector2, dt: float) -> None:
+    global player_walk_frame_index, player_walk_frame_timer, player_facing_left
+
+    if movement.x < -0.01:
+        player_facing_left = True
+    elif movement.x > 0.01:
+        player_facing_left = False
+
+    if movement.length_squared() <= 0.0001:
+        player_walk_frame_index = PLAYER_IDLE_FRAME_INDEX
+        player_walk_frame_timer = 0.0
+        return
+
+    frame_count = len(game_assets.player_walk_frames)
+    if frame_count <= 1:
+        player_walk_frame_index = PLAYER_IDLE_FRAME_INDEX
+        return
+
+    player_walk_frame_timer += dt
+    while player_walk_frame_timer >= PLAYER_WALK_FRAME_DURATION:
+        player_walk_frame_timer -= PLAYER_WALK_FRAME_DURATION
+        player_walk_frame_index = (player_walk_frame_index + 1) % frame_count
+
+
+def get_player_map_sprite() -> pygame.Surface:
+    frame_count = len(game_assets.player_walk_frames)
+    if frame_count == 0:
+        return game_assets.player_image_map
+    frame_index = min(player_walk_frame_index, frame_count - 1)
+    if player_facing_left and frame_index < len(game_assets.player_walk_frames_flipped):
+        return game_assets.player_walk_frames_flipped[frame_index]
+    return game_assets.player_walk_frames[frame_index]
 
 
 def hitbox_collides_with_wall(hitbox: pygame.Rect) -> bool:

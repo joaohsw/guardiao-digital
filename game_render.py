@@ -117,39 +117,94 @@ def draw_map_notice() -> None:
     )
 
 
+def get_settings_panel_rect() -> pygame.Rect:
+    return pygame.Rect(290, 130, 700, 430)
+
+
+def get_settings_fullscreen_rect() -> pygame.Rect:
+    panel = get_settings_panel_rect()
+    return pygame.Rect(panel.x + 70, panel.y + 150, panel.width - 140, 92)
+
+
+def get_settings_back_rect() -> pygame.Rect:
+    panel = get_settings_panel_rect()
+    return pygame.Rect(panel.centerx - 130, panel.bottom - 92, 260, 56)
+
+
 def draw_menu_screen() -> None:
     game_assets.screen.blit(game_assets.menu_image, (0, 0))
+    mouse_pos = pygame.mouse.get_pos()
 
-    title_panel = pygame.Rect(180, 92, 920, 240)
-    draw_panel(title_panel)
+    for button_image, button_rect in (
+        (game_assets.menu_play_button_image, game_assets.menu_play_button_rect),
+        (game_assets.menu_settings_button_image, game_assets.menu_settings_button_rect),
+    ):
+        game_assets.screen.blit(button_image, button_rect)
+        if button_rect.collidepoint(mouse_pos):
+            pygame.draw.rect(game_assets.screen, (138, 255, 255), button_rect.inflate(24, 14), 2, border_radius=24)
+
+
+def draw_settings_screen() -> None:
+    game_assets.screen.blit(game_assets.menu_image, (0, 0))
+
+    overlay = pygame.Surface(SCREEN_SIZE, pygame.SRCALPHA)
+    overlay.fill((7, 13, 16, 195))
+    game_assets.screen.blit(overlay, (0, 0))
+
+    panel = get_settings_panel_rect()
+    draw_panel(panel, (18, 24, 28, 235))
+
+    draw_text("Configuracoes", game_assets.title_font, WHITE, game_assets.screen, panel.centerx, panel.y + 46, center=True)
     draw_text(
-        "GUARDI\u00c3O DIGITAL 2",
-        game_assets.menu_font,
+        "Ajustes de exibicao",
+        game_assets.help_font,
         WHITE,
         game_assets.screen,
-        SCREEN_WIDTH // 2,
-        155,
+        panel.centerx,
+        panel.y + 78,
         center=True,
     )
+
+    fullscreen_rect = get_settings_fullscreen_rect()
+    is_fullscreen = game_assets.fullscreen
+    fill_color = (44, 98, 108) if is_fullscreen else BUTTON_COLOR
+    text_color = WHITE if is_fullscreen else TEXT_DARK
+    status_text = "Ligado" if is_fullscreen else "Desligado"
+
+    pygame.draw.rect(game_assets.screen, fill_color, fullscreen_rect, border_radius=12)
+    pygame.draw.rect(game_assets.screen, BUTTON_BORDER, fullscreen_rect, 2, border_radius=12)
     draw_text(
-        "Explore o mapa, encontre viloes e neutralize crimes digitais",
+        f"Tela cheia: {status_text}",
         game_assets.description_font,
-        WHITE,
+        text_color,
         game_assets.screen,
-        SCREEN_WIDTH // 2,
-        220,
+        fullscreen_rect.centerx,
+        fullscreen_rect.centery - 2,
         center=True,
     )
     draw_text(
-        "ENTER ou clique para iniciar",
-        game_assets.title_font,
-        WHITE,
+        "Clique para alternar",
+        game_assets.help_font,
+        text_color,
         game_assets.screen,
-        SCREEN_WIDTH // 2,
-        282,
+        fullscreen_rect.centerx,
+        fullscreen_rect.centery + 27,
         center=True,
     )
-    draw_text("F11 alterna tela cheia", game_assets.help_font, WHITE, game_assets.screen, SCREEN_WIDTH - 180, 12)
+
+    back_rect = get_settings_back_rect()
+    pygame.draw.rect(game_assets.screen, BUTTON_COLOR, back_rect, border_radius=10)
+    pygame.draw.rect(game_assets.screen, BUTTON_BORDER, back_rect, 2, border_radius=10)
+    draw_text("Voltar", game_assets.description_font, TEXT_DARK, game_assets.screen, back_rect.centerx, back_rect.centery - 1, center=True)
+    draw_text(
+        "ESC para retornar",
+        game_assets.help_font,
+        WHITE,
+        game_assets.screen,
+        panel.centerx,
+        panel.bottom - 20,
+        center=True,
+    )
 
 
 def draw_story_screen() -> None:
@@ -222,8 +277,9 @@ def draw_world_screen() -> None:
         game_assets.screen.blit(sprite, sprite_rect)
 
     player_center = (round(game_state.player_position.x), round(game_state.player_position.y))
-    player_rect = game_assets.player_image_map.get_rect(center=player_center)
-    game_assets.screen.blit(game_assets.player_image_map, player_rect)
+    player_sprite = game_state.get_player_map_sprite()
+    player_rect = player_sprite.get_rect(center=player_center)
+    game_assets.screen.blit(player_sprite, player_rect)
 
     hud = pygame.Surface((SCREEN_WIDTH, 84), pygame.SRCALPHA)
     hud.fill(HUD_BG)

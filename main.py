@@ -42,9 +42,27 @@ def main() -> None:
                 continue
 
             if game_state.game_state == "menu":
-                if (event.type == pygame.KEYDOWN and event.key == pygame.K_RETURN) or event.type == pygame.MOUSEBUTTONDOWN:
+                if event.type == pygame.KEYDOWN and event.key == pygame.K_RETURN:
                     game_logic.reset_progress()
                     game_state.game_state = "exploring"
+                elif event.type == pygame.MOUSEBUTTONDOWN:
+                    if game_assets.menu_play_button_rect.collidepoint(event.pos):
+                        game_logic.reset_progress()
+                        game_state.game_state = "exploring"
+                    elif game_assets.menu_settings_button_rect.collidepoint(event.pos):
+                        game_state.game_state = "settings"
+
+            elif game_state.game_state == "settings":
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_ESCAPE:
+                        game_state.game_state = "menu"
+                    elif event.key in (pygame.K_RETURN, pygame.K_SPACE):
+                        game_logic.toggle_fullscreen()
+                elif event.type == pygame.MOUSEBUTTONDOWN:
+                    if game_render.get_settings_fullscreen_rect().collidepoint(event.pos):
+                        game_logic.toggle_fullscreen()
+                    elif game_render.get_settings_back_rect().collidepoint(event.pos):
+                        game_state.game_state = "menu"
 
             elif game_state.game_state == "story":
                 if (event.type == pygame.KEYDOWN and event.key == pygame.K_RETURN) or event.type == pygame.MOUSEBUTTONDOWN:
@@ -133,6 +151,8 @@ def main() -> None:
 
         if game_state.game_state == "menu":
             game_render.draw_menu_screen()
+        elif game_state.game_state == "settings":
+            game_render.draw_settings_screen()
         elif game_state.game_state == "story":
             game_render.draw_story_screen()
         elif game_state.game_state == "exploring":

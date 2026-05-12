@@ -37,6 +37,7 @@ def reset_progress() -> None:
     game_state.feedback_message = ""
     game_state.feedback_tone = "neutral"
     game_state.encounter_lock_villain_id = None
+    game_state.reset_player_animation()
     for drop in game_state.collectible_drops:
         drop.collected = False
     for villain in game_state.villains:
@@ -44,9 +45,10 @@ def reset_progress() -> None:
         villain.health = villain.max_health
 
 
-def move_player_continuous(input_x: int, input_y: int, dt: float) -> None:
+def move_player_continuous(input_x: int, input_y: int, dt: float) -> pygame.Vector2:
+    applied_movement = pygame.Vector2(0, 0)
     if input_x == 0 and input_y == 0:
-        return
+        return applied_movement
 
     move_vector = pygame.Vector2(input_x, input_y)
     if move_vector.length_squared() > 1:
@@ -56,10 +58,14 @@ def move_player_continuous(input_x: int, input_y: int, dt: float) -> None:
     next_x = game_state.player_position.x + move_vector.x
     if not game_state.hitbox_collides_with_wall(game_state.build_player_hitbox(next_x, game_state.player_position.y)):
         game_state.player_position.x = next_x
+        applied_movement.x = move_vector.x
 
     next_y = game_state.player_position.y + move_vector.y
     if not game_state.hitbox_collides_with_wall(game_state.build_player_hitbox(game_state.player_position.x, next_y)):
         game_state.player_position.y = next_y
+        applied_movement.y = move_vector.y
+
+    return applied_movement
 
 
 def update_exploration(dt: float) -> None:
@@ -67,7 +73,8 @@ def update_exploration(dt: float) -> None:
     keys = pygame.key.get_pressed()
     horizontal = int(keys[pygame.K_d] or keys[pygame.K_RIGHT]) - int(keys[pygame.K_a] or keys[pygame.K_LEFT])
     vertical = int(keys[pygame.K_s] or keys[pygame.K_DOWN]) - int(keys[pygame.K_w] or keys[pygame.K_UP])
-    move_player_continuous(horizontal, vertical, dt)
+    movement = move_player_continuous(horizontal, vertical, dt)
+    game_state.update_player_walk_animation(movement, dt)
     collect_touched_drop()
     try_trigger_encounter()
 
