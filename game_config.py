@@ -1,9 +1,19 @@
-﻿import pygame
+import pygame
 
 SCREEN_WIDTH = 1280
 SCREEN_HEIGHT = 720
 SCREEN_SIZE = (SCREEN_WIDTH, SCREEN_HEIGHT)
 FPS = 60
+
+MAIN_16_9_RESOLUTIONS = [
+    (1024, 576),
+    (1280, 720),
+    (1366, 768),
+    (1600, 900),
+    (1920, 1080),
+    (2560, 1440),
+    (3840, 2160),
+]
 
 ASSETS_PATH = "assets"
 WINDOW_TITLE = "Guardi\u00e3o Digital 2"
@@ -32,14 +42,14 @@ TEXT_DARK = (38, 38, 38)
 WORLD_MAP_LAYOUT = [
     "####################",
     "#S....#.......#....#",
-    "#.##..#.#####.#.##.#",
-    "#....##.....#.#....#",
+    "#.##..#.#######.##.#",
+    "#....##.....###....#",
     "###......##.#.###..#",
-    "#...###.....#......#",
-    "#.#...####.#####.#.#",
-    "#.#.#....#.....#.#.#",
-    "#...#.##.#####.#...#",
-    "#.....#.........#..#",
+    "#...####....#......#",
+    "#.#...####.####.##.#",
+    "#.#.#....#....#.##.#",
+    "#...#.##.######....#",
+    "#.....#........#...#",
     "####################",
 ]
 
@@ -50,10 +60,10 @@ VILLAIN_SPAWNS = [
     (10, 9),
     (14, 9),
     (13, 4),
-    (7, 5),
+    (8, 5),
     (17, 8),
     (18, 1),
-    (18, 9),
+    (17, 5),
 ]
 
 ENEMY_KEYS = [
@@ -128,7 +138,7 @@ COLLECTIBLE_DROPS = [
         "category": "healing",
         "asset_key": "cura",
         "heal_amount": 2,
-        "tile_pos": (5, 9),
+        "tile_pos": (3, 4),
     },
     {
         "id": "kit_recuperacao_norte",
@@ -136,7 +146,7 @@ COLLECTIBLE_DROPS = [
         "category": "healing",
         "asset_key": "cura",
         "heal_amount": 2,
-        "tile_pos": (11, 3),
+        "tile_pos": (14, 5),
     },
     {
         "id": "kit_recuperacao_leste",
@@ -144,7 +154,7 @@ COLLECTIBLE_DROPS = [
         "category": "healing",
         "asset_key": "cura",
         "heal_amount": 2,
-        "tile_pos": (16, 6),
+        "tile_pos": (1, 8),
     },
     {
         "id": "kit_recuperacao_oeste",
@@ -152,7 +162,7 @@ COLLECTIBLE_DROPS = [
         "category": "healing",
         "asset_key": "cura",
         "heal_amount": 2,
-        "tile_pos": (2, 8),
+        "tile_pos": (7, 7),
     },
 ]
 

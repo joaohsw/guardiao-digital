@@ -10,7 +10,6 @@ from game_config import (
     EFFECTIVENESS_DAMAGE,
     NON_FINISHING_EFFECTS,
     PLAYER_SPEED,
-    SCREEN_SIZE,
     SUBATTACK_OPTION_RECTS,
 )
 from game_models import Villain
@@ -373,9 +372,9 @@ def close_feedback_and_continue() -> None:
 
 
 def toggle_fullscreen() -> None:
-    game_assets.fullscreen = not game_assets.fullscreen
-    if game_assets.fullscreen:
-        game_assets.screen = pygame.display.set_mode(SCREEN_SIZE, pygame.FULLSCREEN)
-    else:
-        game_assets.screen = pygame.display.set_mode(SCREEN_SIZE)
+    game_assets.toggle_fullscreen()
+
+
+def set_resolution(resolution: Tuple[int, int]) -> None:
+    game_assets.set_resolution(resolution)
 

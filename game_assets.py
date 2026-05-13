@@ -1,15 +1,147 @@
-﻿import os
-from typing import List
+import os
+from typing import List, Optional, Tuple
 
 import pygame
 
-from game_config import ASSETS_PATH, SCREEN_HEIGHT, SCREEN_SIZE, SCREEN_WIDTH, TILE_SIZE, WINDOW_TITLE
+from game_config import (
+    ASSETS_PATH,
+    MAIN_16_9_RESOLUTIONS,
+    SCREEN_HEIGHT,
+    SCREEN_SIZE,
+    SCREEN_WIDTH,
+    TILE_SIZE,
+    WINDOW_TITLE,
+)
 
 pygame.init()
 
-screen = pygame.display.set_mode(SCREEN_SIZE)
 pygame.display.set_caption(WINDOW_TITLE)
-fullscreen = False
+
+
+def sanitize_resolution(resolution: Tuple[int, int]) -> Tuple[int, int]:
+    width = max(1, int(resolution[0]))
+    height = max(1, int(resolution[1]))
+    return width, height
+
+
+def get_monitor_resolution() -> Tuple[int, int]:
+    display_info = pygame.display.Info()
+    if display_info.current_w <= 0 or display_info.current_h <= 0:
+        return SCREEN_SIZE
+    return display_info.current_w, display_info.current_h
+
+
+def build_resolution_options(monitor_resolution: Tuple[int, int]) -> List[Tuple[int, int]]:
+    valid_options: List[Tuple[int, int]] = []
+    monitor_w, monitor_h = monitor_resolution
+    for width, height in MAIN_16_9_RESOLUTIONS:
+        if width <= monitor_w and height <= monitor_h:
+            valid_options.append((width, height))
+
+    if not valid_options:
+        valid_options.append(SCREEN_SIZE)
+    if SCREEN_SIZE not in valid_options:
+        valid_options.append(SCREEN_SIZE)
+    valid_options.sort(key=lambda size: size[0] * size[1])
+    return valid_options
+
+
+monitor_resolution = get_monitor_resolution()
+resolution_options = build_resolution_options(monitor_resolution)
+current_resolution = monitor_resolution
+fullscreen = True
+
+_display_surface = pygame.display.set_mode(current_resolution, pygame.FULLSCREEN)
+screen = pygame.Surface(SCREEN_SIZE).convert()
+_render_size = SCREEN_SIZE
+_render_offset = (0, 0)
+
+
+def _recalculate_render_target() -> None:
+    global _render_size, _render_offset
+    scale_x = current_resolution[0] / SCREEN_WIDTH
+    scale_y = current_resolution[1] / SCREEN_HEIGHT
+    scale = min(scale_x, scale_y)
+    target_width = max(1, int(SCREEN_WIDTH * scale))
+    target_height = max(1, int(SCREEN_HEIGHT * scale))
+    offset_x = (current_resolution[0] - target_width) // 2
+    offset_y = (current_resolution[1] - target_height) // 2
+    _render_size = (target_width, target_height)
+    _render_offset = (offset_x, offset_y)
+
+
+_recalculate_render_target()
+
+
+def set_display_mode(
+    resolution: Optional[Tuple[int, int]] = None,
+    force_fullscreen: Optional[bool] = None,
+) -> None:
+    global _display_surface, current_resolution, fullscreen
+    previous_resolution = current_resolution
+    previous_fullscreen = fullscreen
+    if resolution is not None:
+        current_resolution = sanitize_resolution(resolution)
+    if force_fullscreen is not None:
+        fullscreen = force_fullscreen
+
+    flags = pygame.FULLSCREEN if fullscreen else 0
+    try:
+        _display_surface = pygame.display.set_mode(current_resolution, flags)
+    except pygame.error:
+        current_resolution = previous_resolution
+        fullscreen = previous_fullscreen
+        fallback_flags = pygame.FULLSCREEN if fullscreen else 0
+        _display_surface = pygame.display.set_mode(current_resolution, fallback_flags)
+    current_resolution = _display_surface.get_size()
+    _recalculate_render_target()
+
+
+def set_resolution(resolution: Tuple[int, int]) -> None:
+    set_display_mode(resolution=resolution)
+
+
+def toggle_fullscreen() -> None:
+    set_display_mode(force_fullscreen=not fullscreen)
+
+
+def get_current_resolution_index() -> int:
+    if current_resolution in resolution_options:
+        return resolution_options.index(current_resolution)
+    return -1
+
+
+def window_to_game_pos(window_pos: Tuple[int, int]) -> Optional[Tuple[int, int]]:
+    if _render_size[0] <= 0 or _render_size[1] <= 0:
+        return window_pos
+    local_x = window_pos[0] - _render_offset[0]
+    local_y = window_pos[1] - _render_offset[1]
+    if local_x < 0 or local_y < 0 or local_x >= _render_size[0] or local_y >= _render_size[1]:
+        return None
+    scale_x = SCREEN_WIDTH / _render_size[0]
+    scale_y = SCREEN_HEIGHT / _render_size[1]
+    game_x = int(local_x * scale_x)
+    game_y = int(local_y * scale_y)
+    clamped_x = max(0, min(SCREEN_WIDTH - 1, game_x))
+    clamped_y = max(0, min(SCREEN_HEIGHT - 1, game_y))
+    return clamped_x, clamped_y
+
+
+def get_virtual_mouse_pos() -> Tuple[int, int]:
+    mouse_pos = window_to_game_pos(pygame.mouse.get_pos())
+    if mouse_pos is None:
+        return -1, -1
+    return mouse_pos
+
+
+def present() -> None:
+    if _render_size == SCREEN_SIZE and _render_offset == (0, 0):
+        _display_surface.blit(screen, (0, 0))
+    else:
+        scaled_surface = pygame.transform.smoothscale(screen, _render_size)
+        _display_surface.fill((0, 0, 0))
+        _display_surface.blit(scaled_surface, _render_offset)
+    pygame.display.flip()
 
 
 def load_font(filename: str, size: int) -> pygame.font.Font:
@@ -37,6 +169,8 @@ MENU_BUTTONS_SHEET_FILENAME = "menu_buttons.png"
 MENU_BUTTON_TARGET_WIDTH = int(SCREEN_WIDTH * 0.16)
 MENU_BUTTON_VERTICAL_GAP = 12
 MENU_BUTTON_BLOCK_CENTER_Y = int(SCREEN_HEIGHT * 0.60)
+TILE_PATH_TEXTURE_FILENAME = "tile_path.png"
+TILE_WALL_TEXTURE_FILENAME = "tile_wall.png"
 
 
 def load_image(filename: str, use_alpha: bool = False) -> pygame.Surface:
@@ -152,6 +286,17 @@ def create_menu_button_fallback(label: str) -> pygame.Surface:
     return button
 
 
+def create_tile_surface_from_texture(filename: str, fallback_color: Tuple[int, int, int]) -> pygame.Surface:
+    texture_path = os.path.join(ASSETS_PATH, filename)
+    if os.path.exists(texture_path):
+        source = load_image(filename)
+        return pygame.transform.scale(source, (TILE_SIZE, TILE_SIZE))
+
+    fallback = pygame.Surface((TILE_SIZE, TILE_SIZE))
+    fallback.fill(fallback_color)
+    return fallback
+
+
 def create_healing_icon(size: int) -> pygame.Surface:
     icon = pygame.Surface((size, size), pygame.SRCALPHA)
     center = size // 2
@@ -174,8 +319,26 @@ def create_healing_icon(size: int) -> pygame.Surface:
     return icon
 
 
+back_button_source = load_image("back_button.png", use_alpha=True)
+_back_button_cache: dict[Tuple[int, int], pygame.Surface] = {}
+
+
+def get_back_button_image(target_size: Tuple[int, int]) -> pygame.Surface:
+    width, height = max(1, target_size[0]), max(1, target_size[1])
+    cache_key = (width, height)
+    cached = _back_button_cache.get(cache_key)
+    if cached is not None:
+        return cached
+    scaled = pygame.transform.smoothscale(back_button_source, cache_key)
+    _back_button_cache[cache_key] = scaled
+    return scaled
+
+
 combate_bg = pygame.transform.scale(load_image("combate.png"), SCREEN_SIZE)
 menu_image = pygame.transform.scale(load_image("menu.png"), SCREEN_SIZE)
+settings_background = pygame.transform.scale(load_image("settings_background.png"), SCREEN_SIZE)
+tile_path_texture = create_tile_surface_from_texture(TILE_PATH_TEXTURE_FILENAME, (140, 179, 119))
+tile_wall_texture = create_tile_surface_from_texture(TILE_WALL_TEXTURE_FILENAME, (57, 74, 64))
 
 menu_play_button_image = create_menu_button_fallback("Jogar")
 menu_settings_button_image = create_menu_button_fallback("Configuracoes")
