@@ -17,15 +17,8 @@ from game_config import (
     CONCLUSION_TEXT,
     GAME_STORY,
     GREEN,
-    GRID_COLOR,
     HUD_BG,
-    MAP_HEIGHT,
-    MAP_OFFSET_X,
-    MAP_OFFSET_Y,
-    MAP_WIDTH,
     PANEL_BG,
-    PATH_COLOR,
-    PATH_COLOR_ALT,
     RED,
     SCREEN_HEIGHT,
     SCREEN_SIZE,
@@ -36,8 +29,6 @@ from game_config import (
     TILE_SIZE,
     WARNING_BACK_RECT,
     WARNING_PROCEED_RECT,
-    WALL_COLOR,
-    WALL_COLOR_ALT,
     WHITE,
     WORLD_MAP_LAYOUT,
 )
@@ -332,20 +323,12 @@ def draw_world_screen() -> None:
     for row_index, row in enumerate(WORLD_MAP_LAYOUT):
         for col_index, cell in enumerate(row):
             tile_rect = game_state.tile_to_rect(col_index, row_index)
-            if cell == "#":
-                color = WALL_COLOR if (row_index + col_index) % 2 == 0 else WALL_COLOR_ALT
-            elif cell == "S":
-                color = START_COLOR
-            else:
-                color = PATH_COLOR if (row_index + col_index) % 2 == 0 else PATH_COLOR_ALT
-            pygame.draw.rect(game_assets.screen, color, tile_rect)
-
-    pygame.draw.rect(
-        game_assets.screen,
-        GRID_COLOR,
-        (MAP_OFFSET_X - 2, MAP_OFFSET_Y - 2, MAP_WIDTH + 4, MAP_HEIGHT + 4),
-        2,
-    )
+            tile_surface = game_assets.tile_wall_texture if cell == "#" else game_assets.tile_path_texture
+            game_assets.screen.blit(tile_surface, tile_rect)
+            if cell == "S":
+                start_overlay = pygame.Surface((TILE_SIZE, TILE_SIZE), pygame.SRCALPHA)
+                start_overlay.fill((*START_COLOR, 58))
+                game_assets.screen.blit(start_overlay, tile_rect)
 
     for drop in game_state.collectible_drops:
         if drop.collected:

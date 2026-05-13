@@ -1,9 +1,17 @@
-﻿import os
+import os
 from typing import List, Optional, Tuple
 
 import pygame
 
-from game_config import ASSETS_PATH, MAIN_16_9_RESOLUTIONS, SCREEN_HEIGHT, SCREEN_SIZE, SCREEN_WIDTH, TILE_SIZE, WINDOW_TITLE
+from game_config import (
+    ASSETS_PATH,
+    MAIN_16_9_RESOLUTIONS,
+    SCREEN_HEIGHT,
+    SCREEN_SIZE,
+    SCREEN_WIDTH,
+    TILE_SIZE,
+    WINDOW_TITLE,
+)
 
 pygame.init()
 
@@ -161,6 +169,8 @@ MENU_BUTTONS_SHEET_FILENAME = "menu_buttons.png"
 MENU_BUTTON_TARGET_WIDTH = int(SCREEN_WIDTH * 0.16)
 MENU_BUTTON_VERTICAL_GAP = 12
 MENU_BUTTON_BLOCK_CENTER_Y = int(SCREEN_HEIGHT * 0.60)
+TILE_PATH_TEXTURE_FILENAME = "tile_path.png"
+TILE_WALL_TEXTURE_FILENAME = "tile_wall.png"
 
 
 def load_image(filename: str, use_alpha: bool = False) -> pygame.Surface:
@@ -276,6 +286,17 @@ def create_menu_button_fallback(label: str) -> pygame.Surface:
     return button
 
 
+def create_tile_surface_from_texture(filename: str, fallback_color: Tuple[int, int, int]) -> pygame.Surface:
+    texture_path = os.path.join(ASSETS_PATH, filename)
+    if os.path.exists(texture_path):
+        source = load_image(filename)
+        return pygame.transform.scale(source, (TILE_SIZE, TILE_SIZE))
+
+    fallback = pygame.Surface((TILE_SIZE, TILE_SIZE))
+    fallback.fill(fallback_color)
+    return fallback
+
+
 def create_healing_icon(size: int) -> pygame.Surface:
     icon = pygame.Surface((size, size), pygame.SRCALPHA)
     center = size // 2
@@ -316,6 +337,8 @@ def get_back_button_image(target_size: Tuple[int, int]) -> pygame.Surface:
 combate_bg = pygame.transform.scale(load_image("combate.png"), SCREEN_SIZE)
 menu_image = pygame.transform.scale(load_image("menu.png"), SCREEN_SIZE)
 settings_background = pygame.transform.scale(load_image("settings_background.png"), SCREEN_SIZE)
+tile_path_texture = create_tile_surface_from_texture(TILE_PATH_TEXTURE_FILENAME, (140, 179, 119))
+tile_wall_texture = create_tile_surface_from_texture(TILE_WALL_TEXTURE_FILENAME, (57, 74, 64))
 
 menu_play_button_image = create_menu_button_fallback("Jogar")
 menu_settings_button_image = create_menu_button_fallback("Configuracoes")
