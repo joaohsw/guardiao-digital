@@ -14,6 +14,16 @@ from game_config import (
 )
 from game_models import Villain
 
+PAUSABLE_GAME_STATES = {
+    "story",
+    "exploring",
+    "encounter",
+    "requirement_warning",
+    "battle",
+    "book",
+    "conclusion",
+}
+
 
 def reset_progress() -> None:
     game_state.book_collected = False
@@ -21,6 +31,8 @@ def reset_progress() -> None:
     game_state.unlocked_attacks.clear()
     game_state.selected_attack_category = None
     game_state.last_game_state = "exploring"
+    game_state.pause_return_state = "exploring"
+    game_state.settings_return_state = "menu"
     game_state.map_notice_message = ""
     game_state.map_notice_timer = 0.0
     game_state.book_page = 0
@@ -42,6 +54,49 @@ def reset_progress() -> None:
     for villain in game_state.villains:
         villain.defeated = False
         villain.health = villain.max_health
+
+
+def can_open_pause_menu() -> bool:
+    return game_state.game_state in PAUSABLE_GAME_STATES
+
+
+def open_pause_menu() -> None:
+    if not can_open_pause_menu():
+        return
+    game_state.pause_return_state = game_state.game_state
+    game_state.settings_resolution_dropdown_open = False
+    game_state.game_state = "pause"
+
+
+def resume_game_from_pause() -> None:
+    if game_state.game_state != "pause":
+        return
+    target_state = game_state.pause_return_state
+    if target_state == "pause":
+        target_state = "exploring"
+    game_state.game_state = target_state
+
+
+def go_to_menu_from_pause() -> None:
+    game_state.settings_resolution_dropdown_open = False
+    game_state.settings_return_state = "menu"
+    game_state.game_state = "menu"
+
+
+def open_settings_screen(return_state: str = "menu") -> None:
+    game_state.settings_resolution_dropdown_open = False
+    game_state.settings_return_state = return_state
+    game_state.game_state = "settings"
+
+
+def close_settings_screen() -> None:
+    game_state.settings_resolution_dropdown_open = False
+    return_state = game_state.settings_return_state
+    game_state.settings_return_state = "menu"
+    if return_state in ("menu", "pause"):
+        game_state.game_state = return_state
+    else:
+        game_state.game_state = "menu"
 
 
 def move_player_continuous(input_x: int, input_y: int, dt: float) -> pygame.Vector2:

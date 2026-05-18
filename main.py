@@ -33,6 +33,14 @@ def main() -> None:
             if event.type == pygame.KEYDOWN and event.key == pygame.K_F11:
                 game_logic.toggle_fullscreen()
 
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+                if game_state.game_state == "pause":
+                    game_logic.resume_game_from_pause()
+                    continue
+                if game_logic.can_open_pause_menu():
+                    game_logic.open_pause_menu()
+                    continue
+
             if (
                 event.type == pygame.MOUSEBUTTONDOWN
                 and game_state.book_collected
@@ -52,8 +60,7 @@ def main() -> None:
                         game_logic.reset_progress()
                         game_state.game_state = "exploring"
                     elif game_assets.menu_settings_button_rect.collidepoint(mouse_pos):
-                        game_state.settings_resolution_dropdown_open = False
-                        game_state.game_state = "settings"
+                        game_logic.open_settings_screen(return_state="menu")
 
             elif game_state.game_state == "settings":
                 if event.type == pygame.KEYDOWN:
@@ -61,16 +68,14 @@ def main() -> None:
                         if game_state.settings_resolution_dropdown_open:
                             game_state.settings_resolution_dropdown_open = False
                         else:
-                            game_state.settings_resolution_dropdown_open = False
-                            game_state.game_state = "menu"
+                            game_logic.close_settings_screen()
                     elif event.key in (pygame.K_RETURN, pygame.K_SPACE):
                         game_logic.toggle_fullscreen()
                 elif event.type == pygame.MOUSEBUTTONDOWN and mouse_pos is not None:
                     if game_render.get_settings_fullscreen_rect().collidepoint(mouse_pos):
                         game_logic.toggle_fullscreen()
                     elif game_render.get_settings_back_rect().collidepoint(mouse_pos):
-                        game_state.settings_resolution_dropdown_open = False
-                        game_state.game_state = "menu"
+                        game_logic.close_settings_screen()
                     elif game_render.get_settings_resolution_toggle_rect().collidepoint(mouse_pos):
                         game_state.settings_resolution_dropdown_open = not game_state.settings_resolution_dropdown_open
                     elif game_state.settings_resolution_dropdown_open:
@@ -83,11 +88,28 @@ def main() -> None:
                 if (event.type == pygame.KEYDOWN and event.key == pygame.K_RETURN) or event.type == pygame.MOUSEBUTTONDOWN:
                     game_state.game_state = "exploring"
 
+            elif game_state.game_state == "pause":
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_1:
+                        game_logic.open_settings_screen(return_state="pause")
+                    elif event.key == pygame.K_2:
+                        game_logic.go_to_menu_from_pause()
+                    elif event.key == pygame.K_3:
+                        running = False
+                elif event.type == pygame.MOUSEBUTTONDOWN and mouse_pos is not None:
+                    selected_action = game_render.get_pause_action_at_pos(mouse_pos)
+                    if selected_action == "settings":
+                        game_logic.open_settings_screen(return_state="pause")
+                    elif selected_action == "menu":
+                        game_logic.go_to_menu_from_pause()
+                    elif selected_action == "quit":
+                        running = False
+
             elif game_state.game_state == "exploring":
                 pass
 
             elif game_state.game_state == "encounter":
-                if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+                if event.type == pygame.KEYDOWN and event.key == pygame.K_BACKSPACE:
                     game_logic.cancel_encounter()
                 elif (event.type == pygame.KEYDOWN and event.key == pygame.K_RETURN) or event.type == pygame.MOUSEBUTTONDOWN:
                     game_logic.start_battle()
@@ -96,7 +118,7 @@ def main() -> None:
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_RETURN:
                         game_logic.resolve_requirement_warning(True)
-                    elif event.key == pygame.K_ESCAPE:
+                    elif event.key == pygame.K_BACKSPACE:
                         game_logic.resolve_requirement_warning(False)
                 elif event.type == pygame.MOUSEBUTTONDOWN:
                     if mouse_pos is not None and WARNING_PROCEED_RECT.collidepoint(mouse_pos):
@@ -111,9 +133,9 @@ def main() -> None:
                 else:
                     selected_attack: Optional[dict] = None
                     if event.type == pygame.KEYDOWN:
-                        if event.key == pygame.K_ESCAPE and game_state.selected_attack_category is not None:
+                        if event.key == pygame.K_BACKSPACE and game_state.selected_attack_category is not None:
                             game_state.selected_attack_category = None
-                        elif event.key == pygame.K_ESCAPE:
+                        elif event.key == pygame.K_q:
                             game_logic.flee_battle()
                         elif game_state.selected_attack_category is None:
                             selected_index = game_logic.key_to_category_index(event.key)
@@ -139,7 +161,7 @@ def main() -> None:
 
             elif game_state.game_state == "book":
                 if event.type == pygame.KEYDOWN:
-                    if event.key in (pygame.K_ESCAPE, pygame.K_RETURN):
+                    if event.key in (pygame.K_RETURN, pygame.K_BACKSPACE):
                         game_logic.close_book_screen()
                     elif event.key in (pygame.K_RIGHT, pygame.K_d):
                         game_logic.next_book_page()
@@ -168,6 +190,8 @@ def main() -> None:
             game_render.draw_menu_screen()
         elif game_state.game_state == "settings":
             game_render.draw_settings_screen()
+        elif game_state.game_state == "pause":
+            game_render.draw_pause_screen()
         elif game_state.game_state == "story":
             game_render.draw_story_screen()
         elif game_state.game_state == "exploring":

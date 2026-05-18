@@ -156,6 +156,121 @@ def get_settings_back_rect() -> pygame.Rect:
     return pygame.Rect(panel.centerx - 150, panel.bottom - 84, 300, 54)
 
 
+def get_pause_panel_rect() -> pygame.Rect:
+    return pygame.Rect(390, 146, 500, 430)
+
+
+def get_pause_button_rects() -> dict[str, pygame.Rect]:
+    panel = get_pause_panel_rect()
+    button_width = panel.width - 110
+    button_height = 56
+    button_gap = 18
+    start_y = panel.y + 142
+    x = panel.centerx - (button_width // 2)
+    return {
+        "settings": pygame.Rect(x, start_y, button_width, button_height),
+        "menu": pygame.Rect(x, start_y + button_height + button_gap, button_width, button_height),
+        "quit": pygame.Rect(x, start_y + (button_height + button_gap) * 2, button_width, button_height),
+    }
+
+
+def get_pause_action_at_pos(pos: tuple[int, int]) -> Optional[str]:
+    for action, rect in get_pause_button_rects().items():
+        if rect.collidepoint(pos):
+            return action
+    return None
+
+
+def draw_pause_background() -> None:
+    background_state = game_state.pause_return_state
+    if background_state == "pause":
+        background_state = "exploring"
+
+    if background_state == "menu":
+        draw_menu_screen()
+    elif background_state == "settings":
+        draw_settings_screen()
+    elif background_state == "story":
+        draw_story_screen()
+    elif background_state == "exploring":
+        draw_world_screen()
+    elif background_state == "encounter":
+        draw_encounter_screen()
+    elif background_state == "requirement_warning":
+        draw_requirement_warning_screen()
+    elif background_state == "battle":
+        draw_battle_screen()
+    elif background_state == "book":
+        draw_book_screen()
+    elif background_state == "conclusion":
+        draw_conclusion_screen()
+    elif background_state in ("victory", "game_over"):
+        draw_end_screen()
+    else:
+        game_assets.screen.fill((23, 32, 31))
+
+
+def draw_pause_screen() -> None:
+    draw_pause_background()
+    mouse_pos = game_assets.get_virtual_mouse_pos()
+    action_labels = {
+        "settings": "Configuracoes",
+        "menu": "Ir para menu",
+        "quit": "Sair para area de trabalho",
+    }
+
+    overlay = pygame.Surface(SCREEN_SIZE, pygame.SRCALPHA)
+    overlay.fill((7, 11, 16, 170))
+    game_assets.screen.blit(overlay, (0, 0))
+
+    panel = get_pause_panel_rect()
+    draw_panel(panel, (14, 22, 28, 235))
+    draw_text("Jogo pausado", game_assets.title_font, WHITE, game_assets.screen, panel.centerx, panel.y + 52, center=True)
+    draw_text(
+        "Escolha uma opcao",
+        game_assets.description_font,
+        WHITE,
+        game_assets.screen,
+        panel.centerx,
+        panel.y + 88,
+        center=True,
+    )
+
+    for action, rect in get_pause_button_rects().items():
+        hovered = rect.collidepoint(mouse_pos)
+        fill = (238, 234, 214) if hovered else BUTTON_COLOR
+        pygame.draw.rect(game_assets.screen, fill, rect, border_radius=10)
+        pygame.draw.rect(game_assets.screen, BUTTON_BORDER, rect, 2, border_radius=10)
+        draw_text(
+            action_labels[action],
+            game_assets.description_font,
+            TEXT_DARK,
+            game_assets.screen,
+            rect.centerx,
+            rect.centery - 9,
+            center=True,
+        )
+
+    draw_text(
+        "1: Configuracoes | 2: Menu | 3: Sair",
+        game_assets.help_font,
+        WHITE,
+        game_assets.screen,
+        panel.centerx,
+        panel.bottom - 48,
+        center=True,
+    )
+    draw_text(
+        "ESC para continuar",
+        game_assets.help_font,
+        WHITE,
+        game_assets.screen,
+        panel.centerx,
+        panel.bottom - 28,
+        center=True,
+    )
+
+
 def draw_menu_screen() -> None:
     game_assets.screen.blit(game_assets.menu_image, (0, 0))
     mouse_pos = game_assets.get_virtual_mouse_pos()
@@ -278,7 +393,7 @@ def draw_settings_screen() -> None:
     back_rect = get_settings_back_rect()
     draw_back_image_button(back_rect, back_rect.collidepoint(mouse_pos))
     draw_text(
-        "ESC para retornar | F11 para tela cheia",
+        "ESC para voltar | F11 para tela cheia",
         game_assets.help_font,
         WHITE,
         game_assets.screen,
@@ -383,6 +498,7 @@ def draw_world_screen() -> None:
         17,
         center=True,
     )
+    draw_text("ESC: pausar", game_assets.help_font, WHITE, game_assets.screen, SCREEN_WIDTH - 180, 35)
     draw_text("F11: tela cheia", game_assets.help_font, WHITE, game_assets.screen, SCREEN_WIDTH - 180, 11)
     draw_book_hud_button()
     draw_map_notice()
@@ -414,7 +530,7 @@ def draw_encounter_screen() -> None:
         center=False,
     )
     draw_text(
-        "ENTER/click: enfrentar | ESC: voltar ao mapa",
+        "ENTER/click: enfrentar | Backspace: voltar ao mapa | ESC: pausar",
         game_assets.help_font,
         WHITE,
         game_assets.screen,
@@ -499,7 +615,7 @@ def draw_requirement_warning_screen() -> None:
     draw_back_image_button(WARNING_BACK_RECT, WARNING_BACK_RECT.collidepoint(game_assets.get_virtual_mouse_pos()))
 
     draw_text(
-        "ENTER: prosseguir | ESC: voltar",
+        "ENTER: prosseguir | Backspace: voltar | ESC: pausar",
         game_assets.help_font,
         WHITE,
         game_assets.screen,
@@ -640,7 +756,7 @@ def draw_battle_screen() -> None:
                 option_rect.x + 92,
                 option_rect.y + 43,
             )
-        footer = "Escolha uma categoria com clique/teclas 1-4 | ESC ou botao Voltar volta ao mapa"
+        footer = "Escolha uma categoria com clique/teclas 1-4 | Q ou botao Voltar volta ao mapa | ESC pausa"
     else:
         category_name = ATTACK_CATEGORIES[game_state.selected_attack_category]["name"]
         attacks = game_state.get_unlocked_attacks_for_category(game_state.selected_attack_category)
@@ -669,7 +785,7 @@ def draw_battle_screen() -> None:
                 option_rect.x + 18,
                 option_rect.y + 9,
             )
-        footer = "Escolha um ataque com clique/teclas 1-5 | ESC volta para categorias"
+        footer = "Escolha um ataque com clique/teclas 1-5 | Backspace volta para categorias | ESC pausa"
 
     draw_text(
         footer,
