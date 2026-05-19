@@ -581,13 +581,19 @@ def draw_requirement_warning_screen() -> None:
 
 
 def draw_enemy_health_bar(surface: pygame.Surface, villain: Villain, x: int, y: int, width: int = 320) -> None:
-    draw_text("Estabilidade do inimigo", game_assets.help_font, WHITE, surface, x, y)
-    bar_rect = pygame.Rect(x, y + 18, width, 18)
+    bar_rect = pygame.Rect(x, y, width, 18)
     pygame.draw.rect(surface, RED, bar_rect, border_radius=4)
     if villain.health > 0:
         current_width = int(width * (villain.health / villain.max_health))
         pygame.draw.rect(surface, GREEN, (bar_rect.x, bar_rect.y, current_width, bar_rect.height), border_radius=4)
-    draw_text(f"{villain.health}/{villain.max_health}", game_assets.help_font, WHITE, surface, bar_rect.right - 52, y - 1)
+    draw_text(
+        f"{villain.health}/{villain.max_health}",
+        game_assets.help_font,
+        WHITE,
+        surface,
+        bar_rect.right - 52,
+        bar_rect.y - 19,
+    )
 
 
 def draw_feedback_overlay() -> None:
@@ -652,9 +658,9 @@ def draw_battle_screen() -> None:
 
     game_assets.screen.blit(game_assets.combate_bg, (0, 0))
 
-    # Keep the duel centered in the arena, with room reserved for the lower command panel.
-    enemy_pos = (SCREEN_WIDTH // 2, int(SCREEN_HEIGHT * 0.25))
-    player_pos = (SCREEN_WIDTH // 2, int(SCREEN_HEIGHT * 0.54))
+    # Side-by-side duel staging: player lower-left, enemy upper-right.
+    enemy_pos = (int(SCREEN_WIDTH * 0.66), int(SCREEN_HEIGHT * 0.38))
+    player_pos = (int(SCREEN_WIDTH * 0.38), int(SCREEN_HEIGHT * 0.55))
 
     enemy_image = game_assets.combat_enemy_images[villain.id]
     enemy_rect = enemy_image.get_rect(center=enemy_pos)
@@ -674,9 +680,12 @@ def draw_battle_screen() -> None:
         center=True,
     )
 
-    # Health bars near the top
+    # Health bars
     draw_health_bar(game_assets.screen, 110, 52)
-    draw_enemy_health_bar(game_assets.screen, villain, SCREEN_WIDTH - 440, 34)
+    enemy_bar_width = 300
+    enemy_bar_x = enemy_rect.centerx - enemy_bar_width // 2
+    enemy_bar_y = max(72, enemy_rect.top - 32)
+    draw_enemy_health_bar(game_assets.screen, villain, enemy_bar_x, enemy_bar_y, enemy_bar_width)
 
     # Flee button (bottom-left area)
     def draw_battle_button(rect: pygame.Rect, text: str) -> None:
