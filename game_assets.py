@@ -334,12 +334,26 @@ def get_back_button_image(target_size: Tuple[int, int]) -> pygame.Surface:
     return scaled
 
 
+proceed_button_source = load_image("prosseguir.png", use_alpha=True)
+_proceed_button_cache: dict[Tuple[int, int], pygame.Surface] = {}
+
+
+def get_proceed_button_image(target_size: Tuple[int, int]) -> pygame.Surface:
+    width, height = max(1, target_size[0]), max(1, target_size[1])
+    cache_key = (width, height)
+    cached = _proceed_button_cache.get(cache_key)
+    if cached is not None:
+        return cached
+    scaled = pygame.transform.smoothscale(proceed_button_source, cache_key)
+    _proceed_button_cache[cache_key] = scaled
+    return scaled
+
+
 combate_bg = pygame.transform.scale(load_image("combate.png"), SCREEN_SIZE)
 menu_image = pygame.transform.scale(load_image("menu.png"), SCREEN_SIZE)
 settings_background = pygame.transform.scale(load_image("settings_background.png"), SCREEN_SIZE)
 tile_path_texture = create_tile_surface_from_texture(TILE_PATH_TEXTURE_FILENAME, (140, 179, 119))
 tile_wall_texture = create_tile_surface_from_texture(TILE_WALL_TEXTURE_FILENAME, (57, 74, 64))
-
 menu_play_button_image = create_menu_button_fallback("Jogar")
 menu_settings_button_image = create_menu_button_fallback("Configuracoes")
 menu_buttons_sheet_path = os.path.join(ASSETS_PATH, MENU_BUTTONS_SHEET_FILENAME)

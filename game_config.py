@@ -26,7 +26,9 @@ WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 RED = (204, 57, 57)
 GREEN = (56, 142, 60)
-HUD_BG = (28, 34, 38, 190)
+HUD_BG = (28, 34, 38)
+PANEL_BG = (18, 24, 28, 210)
+PANEL_BORDER = (202, 214, 197)
 PANEL_BG = (18, 24, 28, 210)
 PANEL_BORDER = (202, 214, 197)
 WALL_COLOR = (57, 74, 64)
@@ -38,6 +40,9 @@ GRID_COLOR = (111, 138, 96)
 BUTTON_COLOR = (224, 220, 202)
 BUTTON_BORDER = (56, 52, 40)
 TEXT_DARK = (38, 38, 38)
+BATTLE_BUTTON_COLOR = (12, 48, 56, 200)
+BATTLE_BUTTON_BORDER = (0, 200, 220)
+BATTLE_TEXT = (0, 230, 255)
 
 WORLD_MAP_LAYOUT = [
     "####################",
@@ -453,26 +458,35 @@ MAP_OFFSET_X = (SCREEN_WIDTH - MAP_WIDTH) // 2
 MAP_OFFSET_Y = (SCREEN_HEIGHT - MAP_HEIGHT) // 2
 
 BATTLE_OPTION_RECTS = [
-    pygame.Rect(80, 530, 515, 72),
-    pygame.Rect(685, 530, 515, 72),
-    pygame.Rect(80, 620, 515, 72),
-    pygame.Rect(685, 620, 515, 72),
+    pygame.Rect(120, 500, 450, 65),
+    pygame.Rect(710, 500, 450, 65),
+    pygame.Rect(120, 612, 450, 65),
+    pygame.Rect(710, 612, 450, 65),
 ]
 
-BATTLE_FLEE_RECT = pygame.Rect(1040, 487, 160, 38)
+BATTLE_FLEE_RECT = pygame.Rect(710, 612, 450, 65)
 WARNING_PROCEED_RECT = pygame.Rect(420, 442, 200, 46)
 WARNING_BACK_RECT = pygame.Rect(660, 442, 200, 46)
 
 SUBATTACK_OPTION_RECTS = [
-    pygame.Rect(210, 500, 860, 34),
-    pygame.Rect(210, 540, 860, 34),
-    pygame.Rect(210, 580, 860, 34),
-    pygame.Rect(210, 620, 860, 34),
-    pygame.Rect(210, 660, 860, 34),
+    pygame.Rect(120, 500, 450, 50),
+    pygame.Rect(710, 500, 450, 50),
+    pygame.Rect(120, 562, 450, 50),
+    pygame.Rect(710, 562, 450, 50),
+    pygame.Rect(120, 624, 450, 50),
 ]
 
-BOOK_HUD_RECT = pygame.Rect(SCREEN_WIDTH - 74, 12, 56, 56)
+BOOK_HUD_RECT = pygame.Rect(SCREEN_WIDTH - 50, 6, 36, 36)
 BOOK_CLOSE_RECT = pygame.Rect(SCREEN_WIDTH - 205, 612, 150, 42)
 BOOK_PREV_RECT = pygame.Rect(355, 612, 150, 42)
 BOOK_NEXT_RECT = pygame.Rect(775, 612, 150, 42)
 BOOK_PAGE_SIZE = 2
+
+ENCOUNTER_FIGHT_RECT = pygame.Rect(420, 560, 200, 46)
+ENCOUNTER_FLEE_RECT = pygame.Rect(660, 560, 200, 46)
+
+PAUSE_PANEL_RECT = pygame.Rect(440, 140, 400, 410)
+PAUSE_CONTINUE_RECT = pygame.Rect(500, 210, 280, 50)
+PAUSE_SETTINGS_RECT = pygame.Rect(500, 280, 280, 50)
+PAUSE_MENU_RECT = pygame.Rect(500, 350, 280, 50)
+PAUSE_QUIT_RECT = pygame.Rect(500, 420, 280, 50)

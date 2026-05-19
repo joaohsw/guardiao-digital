@@ -1,4 +1,4 @@
-﻿import pygame
+import pygame
 from typing import Optional
 
 
@@ -31,6 +31,16 @@ from game_config import (
     WARNING_PROCEED_RECT,
     WHITE,
     WORLD_MAP_LAYOUT,
+    ENCOUNTER_FIGHT_RECT,
+    ENCOUNTER_FLEE_RECT,
+    BATTLE_BUTTON_COLOR,
+    BATTLE_BUTTON_BORDER,
+    BATTLE_TEXT,
+    PAUSE_PANEL_RECT,
+    PAUSE_CONTINUE_RECT,
+    PAUSE_SETTINGS_RECT,
+    PAUSE_MENU_RECT,
+    PAUSE_QUIT_RECT,
 )
 from game_models import Villain
 from game_ui import draw_panel, draw_text, draw_text_block
@@ -68,20 +78,33 @@ def format_book_attack_name(attack_ids: list[str]) -> str:
 
 
 def draw_health_bar(surface: pygame.Surface, x: int, y: int) -> None:
-    draw_text("Integridade", game_assets.help_font, WHITE, surface, x, y)
-    bar_x = x + 140
-    bar_y = y + 2
-    segment_width = 40
-    segment_height = 16
-    total_width = segment_width * game_state.max_player_health
-    pygame.draw.rect(surface, RED, (bar_x, bar_y, total_width, segment_height), border_radius=3)
-    if game_state.player_health > 0:
-        pygame.draw.rect(
-            surface,
-            GREEN,
-            (bar_x, bar_y, segment_width * game_state.player_health, segment_height),
-            border_radius=3,
-        )
+    # Removed label "Integridade" text to draw hearts directly at the starting x position
+    gap = 6
+    heart_size = 20
+    for i in range(game_state.max_player_health):
+        hx = x + i * (heart_size + gap)
+        hy = y
+        filled = i < game_state.player_health
+
+        # Draw black outline (slightly larger)
+        pygame.draw.circle(surface, (15, 20, 25), (hx + 5, hy + 6), 6)
+        pygame.draw.circle(surface, (15, 20, 25), (hx + 14, hy + 6), 6)
+        pygame.draw.polygon(surface, (15, 20, 25), [(hx, hy + 7), (hx + 20, hy + 7), (hx + 10, hy + 20)])
+
+        if filled:
+            # Ruby red heart
+            pygame.draw.circle(surface, (231, 76, 60), (hx + 5, hy + 6), 5)
+            pygame.draw.circle(surface, (231, 76, 60), (hx + 14, hy + 6), 5)
+            pygame.draw.polygon(surface, (231, 76, 60), [(hx + 1, hy + 7), (hx + 19, hy + 7), (hx + 10, hy + 19)])
+            # Gloss highlight
+            pygame.draw.circle(surface, (255, 255, 255), (hx + 3, hy + 4), 1)
+        else:
+            # Slate grey/empty heart container
+            pygame.draw.circle(surface, (40, 44, 52), (hx + 5, hy + 6), 5)
+            pygame.draw.circle(surface, (40, 44, 52), (hx + 14, hy + 6), 5)
+            pygame.draw.polygon(surface, (40, 44, 52), [(hx + 1, hy + 7), (hx + 19, hy + 7), (hx + 10, hy + 19)])
+            # Subtle empty slot highlight
+            pygame.draw.circle(surface, (70, 75, 85), (hx + 3, hy + 4), 1)
 
 
 def draw_book_hud_button() -> None:
@@ -90,8 +113,20 @@ def draw_book_hud_button() -> None:
     pygame.draw.rect(game_assets.screen, BUTTON_COLOR, BOOK_HUD_RECT, border_radius=8)
     pygame.draw.rect(game_assets.screen, BUTTON_BORDER, BOOK_HUD_RECT, 2, border_radius=8)
     icon = game_assets.collectible_images["book"]
-    icon_rect = icon.get_rect(center=BOOK_HUD_RECT.center)
-    game_assets.screen.blit(icon, icon_rect)
+    
+    # Scale proportionally to fit inside 36x36 without squishing
+    orig_w, orig_h = icon.get_size()
+    max_dim = 24
+    if orig_w > orig_h:
+        new_w = max_dim
+        new_h = int(orig_h * (max_dim / orig_w))
+    else:
+        new_h = max_dim
+        new_w = int(orig_w * (max_dim / orig_h))
+    
+    icon_scaled = pygame.transform.smoothscale(icon, (max(1, new_w), max(1, new_h)))
+    icon_rect = icon_scaled.get_rect(center=BOOK_HUD_RECT.center)
+    game_assets.screen.blit(icon_scaled, icon_rect)
 
 
 def draw_map_notice() -> None:
@@ -111,8 +146,35 @@ def draw_map_notice() -> None:
 
 
 def draw_back_image_button(rect: pygame.Rect, hovered: bool = False) -> None:
-    button_image = game_assets.get_back_button_image(rect.size)
-    game_assets.screen.blit(button_image, rect)
+    pygame.draw.rect(game_assets.screen, BUTTON_COLOR, rect, border_radius=8)
+    pygame.draw.rect(game_assets.screen, BUTTON_BORDER, rect, 2, border_radius=8)
+    draw_text(
+        "Voltar",
+        game_assets.help_font,
+        TEXT_DARK,
+        game_assets.screen,
+        rect.centerx,
+        rect.centery - 1,
+        center=True,
+    )
+    if hovered:
+        hover_overlay = pygame.Surface(rect.size, pygame.SRCALPHA)
+        hover_overlay.fill((255, 255, 255, 34))
+        game_assets.screen.blit(hover_overlay, rect.topleft)
+
+
+def draw_proceed_image_button(rect: pygame.Rect, hovered: bool = False) -> None:
+    pygame.draw.rect(game_assets.screen, BUTTON_COLOR, rect, border_radius=8)
+    pygame.draw.rect(game_assets.screen, BUTTON_BORDER, rect, 2, border_radius=8)
+    draw_text(
+        "Prosseguir",
+        game_assets.help_font,
+        TEXT_DARK,
+        game_assets.screen,
+        rect.centerx,
+        rect.centery - 1,
+        center=True,
+    )
     if hovered:
         hover_overlay = pygame.Surface(rect.size, pygame.SRCALPHA)
         hover_overlay.fill((255, 255, 255, 34))
@@ -354,36 +416,10 @@ def draw_world_screen() -> None:
     player_rect = player_sprite.get_rect(center=player_center)
     game_assets.screen.blit(player_sprite, player_rect)
 
-    hud = pygame.Surface((SCREEN_WIDTH, 84), pygame.SRCALPHA)
+    hud = pygame.Surface((SCREEN_WIDTH, 48))
     hud.fill(HUD_BG)
     game_assets.screen.blit(hud, (0, 0))
-    draw_health_bar(game_assets.screen, 14, 11)
-    draw_text(
-        f"Viloes restantes: {game_state.remaining_villains_count()}",
-        game_assets.help_font,
-        WHITE,
-        game_assets.screen,
-        14,
-        38,
-    )
-    draw_text(
-        f"Drops coletados: {game_state.collected_drops_count()}/{len(game_state.collectible_drops)}",
-        game_assets.help_font,
-        WHITE,
-        game_assets.screen,
-        14,
-        62,
-    )
-    draw_text(
-        "Colete drops para liberar viloes especificos | WASD/Setas para explorar",
-        game_assets.help_font,
-        WHITE,
-        game_assets.screen,
-        SCREEN_WIDTH // 2,
-        17,
-        center=True,
-    )
-    draw_text("F11: tela cheia", game_assets.help_font, WHITE, game_assets.screen, SCREEN_WIDTH - 180, 11)
+    draw_health_bar(game_assets.screen, 16, 14)
     draw_book_hud_button()
     draw_map_notice()
 
@@ -413,15 +449,41 @@ def draw_encounter_screen() -> None:
         encounter_panel.width - 108,
         center=False,
     )
+    # Draw Lutar (Fight) button
+    fight_hovered = ENCOUNTER_FIGHT_RECT.collidepoint(game_assets.get_virtual_mouse_pos())
+    pygame.draw.rect(game_assets.screen, BUTTON_COLOR, ENCOUNTER_FIGHT_RECT, border_radius=8)
+    pygame.draw.rect(game_assets.screen, BUTTON_BORDER, ENCOUNTER_FIGHT_RECT, 2, border_radius=8)
     draw_text(
-        "ENTER/click: enfrentar | ESC: voltar ao mapa",
+        "Lutar",
         game_assets.help_font,
-        WHITE,
+        TEXT_DARK,
         game_assets.screen,
-        encounter_panel.centerx,
-        encounter_panel.bottom - 28,
+        ENCOUNTER_FIGHT_RECT.centerx,
+        ENCOUNTER_FIGHT_RECT.centery - 1,
         center=True,
     )
+    if fight_hovered:
+        hover_overlay = pygame.Surface(ENCOUNTER_FIGHT_RECT.size, pygame.SRCALPHA)
+        hover_overlay.fill((255, 255, 255, 34))
+        game_assets.screen.blit(hover_overlay, ENCOUNTER_FIGHT_RECT.topleft)
+
+    # Draw Fugir (Flee) button
+    flee_hovered = ENCOUNTER_FLEE_RECT.collidepoint(game_assets.get_virtual_mouse_pos())
+    pygame.draw.rect(game_assets.screen, BUTTON_COLOR, ENCOUNTER_FLEE_RECT, border_radius=8)
+    pygame.draw.rect(game_assets.screen, BUTTON_BORDER, ENCOUNTER_FLEE_RECT, 2, border_radius=8)
+    draw_text(
+        "Fugir",
+        game_assets.help_font,
+        TEXT_DARK,
+        game_assets.screen,
+        ENCOUNTER_FLEE_RECT.centerx,
+        ENCOUNTER_FLEE_RECT.centery - 1,
+        center=True,
+    )
+    if flee_hovered:
+        hover_overlay = pygame.Surface(ENCOUNTER_FLEE_RECT.size, pygame.SRCALPHA)
+        hover_overlay.fill((255, 255, 255, 34))
+        game_assets.screen.blit(hover_overlay, ENCOUNTER_FLEE_RECT.topleft)
     draw_book_hud_button()
 
 
@@ -484,16 +546,9 @@ def draw_requirement_warning_screen() -> None:
                 center=True,
             )
 
-    pygame.draw.rect(game_assets.screen, BUTTON_COLOR, WARNING_PROCEED_RECT, border_radius=8)
-    pygame.draw.rect(game_assets.screen, BUTTON_BORDER, WARNING_PROCEED_RECT, 2, border_radius=8)
-    draw_text(
-        "Prosseguir",
-        game_assets.help_font,
-        TEXT_DARK,
-        game_assets.screen,
-        WARNING_PROCEED_RECT.centerx,
-        WARNING_PROCEED_RECT.centery - 1,
-        center=True,
+    draw_proceed_image_button(
+        WARNING_PROCEED_RECT,
+        WARNING_PROCEED_RECT.collidepoint(game_assets.get_virtual_mouse_pos()),
     )
 
     draw_back_image_button(WARNING_BACK_RECT, WARNING_BACK_RECT.collidepoint(game_assets.get_virtual_mouse_pos()))
@@ -581,8 +636,9 @@ def draw_battle_screen() -> None:
 
     game_assets.screen.blit(game_assets.combate_bg, (0, 0))
 
-    enemy_pos = (SCREEN_WIDTH // 2, int(SCREEN_HEIGHT * 0.29))
-    player_pos = (SCREEN_WIDTH // 2, int(SCREEN_HEIGHT * 0.54))
+    # Characters positioned inside the arena area (top portion of the new bg)
+    enemy_pos = (SCREEN_WIDTH // 2, int(SCREEN_HEIGHT * 0.20))
+    player_pos = (SCREEN_WIDTH // 2, int(SCREEN_HEIGHT * 0.50))
 
     enemy_image = game_assets.combat_enemy_images[villain.id]
     enemy_rect = enemy_image.get_rect(center=enemy_pos)
@@ -591,26 +647,34 @@ def draw_battle_screen() -> None:
     player_rect = game_assets.player_image_combat.get_rect(center=player_pos)
     game_assets.screen.blit(game_assets.player_image_combat, player_rect)
 
-    battle_header = pygame.Rect(230, 16, 820, 92)
-    draw_panel(battle_header, (18, 24, 28, 200))
-    draw_text(villain.crime["enemy_name"], game_assets.title_font, WHITE, game_assets.screen, battle_header.centerx, 40, center=True)
-    draw_health_bar(game_assets.screen, battle_header.x + 26, 73)
-    draw_enemy_health_bar(game_assets.screen, villain, battle_header.right - 348, 46)
+    # Enemy name at top center
+    draw_text(villain.crime["enemy_name"], game_assets.title_font, BATTLE_TEXT, game_assets.screen, SCREEN_WIDTH // 2, 20, center=True)
 
-    info_panel = pygame.Rect(160, 365, 960, 112)
-    draw_panel(info_panel, (18, 24, 28, 200))
-    draw_text_block(
-        villain.crime["description"],
-        game_assets.description_font,
-        WHITE,
-        game_assets.screen,
-        info_panel.x + 30,
-        info_panel.y + 24,
-        info_panel.width - 60,
-        center=False,
-    )
+    # Health bars near the top
+    draw_health_bar(game_assets.screen, 110, 50)
+    draw_enemy_health_bar(game_assets.screen, villain, SCREEN_WIDTH - 440, 30)
 
-    draw_back_image_button(BATTLE_FLEE_RECT, BATTLE_FLEE_RECT.collidepoint(game_assets.get_virtual_mouse_pos()))
+    # Flee button (bottom-left area)
+    def draw_battle_button(rect: pygame.Rect, text: str) -> None:
+        btn_surf = pygame.Surface(rect.size, pygame.SRCALPHA)
+        btn_surf.fill(BATTLE_BUTTON_COLOR)
+        game_assets.screen.blit(btn_surf, rect.topleft)
+        pygame.draw.rect(game_assets.screen, BATTLE_BUTTON_BORDER, rect, 2, border_radius=4)
+        draw_text(
+            text,
+            game_assets.help_font,
+            BATTLE_TEXT,
+            game_assets.screen,
+            rect.centerx,
+            rect.centery - 1,
+            center=True,
+        )
+        if rect.collidepoint(game_assets.get_virtual_mouse_pos()):
+            hover_overlay = pygame.Surface(rect.size, pygame.SRCALPHA)
+            hover_overlay.fill((0, 200, 220, 30))
+            game_assets.screen.blit(hover_overlay, rect.topleft)
+
+    draw_battle_button(BATTLE_FLEE_RECT, "Fugir")
 
     if game_state.selected_attack_category is None:
         categories = game_state.get_unlocked_categories()
@@ -618,68 +682,26 @@ def draw_battle_screen() -> None:
             if index >= len(BATTLE_OPTION_RECTS):
                 break
             option_rect = BATTLE_OPTION_RECTS[index]
-            pygame.draw.rect(game_assets.screen, BUTTON_COLOR, option_rect, border_radius=8)
-            pygame.draw.rect(game_assets.screen, BUTTON_BORDER, option_rect, 2, border_radius=8)
             category_data = ATTACK_CATEGORIES[category]
-            icon = game_assets.collectible_images[category_data["asset_key"]]
-            icon_rect = icon.get_rect(center=(option_rect.x + 48, option_rect.centery))
-            game_assets.screen.blit(icon, icon_rect)
-            draw_text(
-                f"{index + 1}. {category_data['name']}",
-                game_assets.description_font,
-                TEXT_DARK,
-                game_assets.screen,
-                option_rect.x + 92,
-                option_rect.y + 18,
-            )
-            draw_text(
-                "Abrir ataques desta categoria",
-                game_assets.help_font,
-                TEXT_DARK,
-                game_assets.screen,
-                option_rect.x + 92,
-                option_rect.y + 43,
-            )
-        footer = "Escolha uma categoria com clique/teclas 1-4 | ESC ou botao Voltar volta ao mapa"
+            draw_battle_button(option_rect, f"{index + 1}. {category_data['name']}")
     else:
         category_name = ATTACK_CATEGORIES[game_state.selected_attack_category]["name"]
         attacks = game_state.get_unlocked_attacks_for_category(game_state.selected_attack_category)
         draw_text(
             f"Categoria: {category_name}",
             game_assets.description_font,
-            WHITE,
+            BATTLE_TEXT,
             game_assets.screen,
             SCREEN_WIDTH // 2,
-            492,
+            442,
             center=True,
         )
         for index, attack in enumerate(attacks):
             if index >= len(SUBATTACK_OPTION_RECTS):
                 break
             option_rect = SUBATTACK_OPTION_RECTS[index]
-            pygame.draw.rect(game_assets.screen, BUTTON_COLOR, option_rect, border_radius=8)
-            pygame.draw.rect(game_assets.screen, BUTTON_BORDER, option_rect, 2, border_radius=8)
-            effectiveness = game_state.get_attack_effectiveness(villain.enemy_key, attack["id"])
-            visible_effect = f" | Efeito: {effectiveness}" if game_state.book_collected else ""
-            draw_text(
-                f"{index + 1}. {attack['name']}{visible_effect}",
-                game_assets.help_font,
-                TEXT_DARK,
-                game_assets.screen,
-                option_rect.x + 18,
-                option_rect.y + 9,
-            )
-        footer = "Escolha um ataque com clique/teclas 1-5 | ESC volta para categorias"
+            draw_battle_button(option_rect, f"{index + 1}. {attack['name']}")
 
-    draw_text(
-        footer,
-        game_assets.help_font,
-        WHITE,
-        game_assets.screen,
-        SCREEN_WIDTH // 2,
-        SCREEN_HEIGHT - 14,
-        center=True,
-    )
     draw_book_hud_button()
 
     if game_state.feedback_active:
@@ -905,3 +927,50 @@ def draw_end_screen() -> None:
         end_panel.centery,
         center=True,
     )
+
+
+def draw_pause_screen() -> None:
+    # 1. Semi-transparent dark overlay
+    overlay = pygame.Surface(SCREEN_SIZE, pygame.SRCALPHA)
+    overlay.fill((0, 0, 0, 150))
+    game_assets.screen.blit(overlay, (0, 0))
+
+    # 2. Draw pause panel
+    draw_panel(PAUSE_PANEL_RECT)
+
+    # 3. Draw Title: "Jogo Pausado"
+    draw_text(
+        "Jogo Pausado",
+        game_assets.title_font,
+        WHITE,
+        game_assets.screen,
+        PAUSE_PANEL_RECT.centerx,
+        PAUSE_PANEL_RECT.y + 40,
+        center=True,
+    )
+
+    # 4. Draw buttons: Continuar, Configuracoes, Voltar ao Menu
+    mouse_pos = game_assets.get_virtual_mouse_pos()
+
+    for rect, text in (
+        (PAUSE_CONTINUE_RECT, "Continuar"),
+        (PAUSE_SETTINGS_RECT, "Configuracoes"),
+        (PAUSE_MENU_RECT, "Voltar ao Menu"),
+        (PAUSE_QUIT_RECT, "Sair do Jogo"),
+    ):
+        hovered = rect.collidepoint(mouse_pos)
+        pygame.draw.rect(game_assets.screen, BUTTON_COLOR, rect, border_radius=8)
+        pygame.draw.rect(game_assets.screen, BUTTON_BORDER, rect, 2, border_radius=8)
+        draw_text(
+            text,
+            game_assets.help_font,
+            TEXT_DARK,
+            game_assets.screen,
+            rect.centerx,
+            rect.centery - 1,
+            center=True,
+        )
+        if hovered:
+            hover_overlay = pygame.Surface(rect.size, pygame.SRCALPHA)
+            hover_overlay.fill((255, 255, 255, 34))
+            game_assets.screen.blit(hover_overlay, rect.topleft)

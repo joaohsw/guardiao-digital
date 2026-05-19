@@ -1,4 +1,4 @@
-﻿from typing import List, Optional, Set, Tuple
+from typing import List, Optional, Set, Tuple
 
 import pygame
 
@@ -172,8 +172,10 @@ def all_villains_defeated() -> bool:
 
 
 def build_player_hitbox(x: float, y: float) -> pygame.Rect:
-    rect = pygame.Rect(0, 0, PLAYER_HITBOX_SIZE, PLAYER_HITBOX_SIZE)
-    rect.center = (round(x), round(y))
+    # Offset the hitbox center to the feet of the character sprite (around y + 14)
+    # and reduce vertical size to 18 pixels.
+    rect = pygame.Rect(0, 0, PLAYER_HITBOX_SIZE, 18)
+    rect.center = (round(x), round(y) + 14)
     return rect
 
 
