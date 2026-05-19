@@ -129,6 +129,22 @@ def draw_book_hud_button() -> None:
     game_assets.screen.blit(icon_scaled, icon_rect)
 
 
+def draw_battle_flee_hud_button() -> None:
+    hovered = BATTLE_FLEE_RECT.collidepoint(game_assets.get_virtual_mouse_pos())
+    fill_color = (237, 233, 214) if hovered else BUTTON_COLOR
+    pygame.draw.rect(game_assets.screen, fill_color, BATTLE_FLEE_RECT, border_radius=8)
+    pygame.draw.rect(game_assets.screen, BUTTON_BORDER, BATTLE_FLEE_RECT, 2, border_radius=8)
+    draw_text(
+        "Fugir",
+        game_assets.help_font,
+        TEXT_DARK,
+        game_assets.screen,
+        BATTLE_FLEE_RECT.centerx,
+        BATTLE_FLEE_RECT.centery - 1,
+        center=True,
+    )
+
+
 def draw_map_notice() -> None:
     if not game_state.map_notice_message:
         return
@@ -636,9 +652,9 @@ def draw_battle_screen() -> None:
 
     game_assets.screen.blit(game_assets.combate_bg, (0, 0))
 
-    # Characters positioned inside the arena area (top portion of the new bg)
-    enemy_pos = (SCREEN_WIDTH // 2, int(SCREEN_HEIGHT * 0.20))
-    player_pos = (SCREEN_WIDTH // 2, int(SCREEN_HEIGHT * 0.50))
+    # Keep the duel centered in the arena, with room reserved for the lower command panel.
+    enemy_pos = (SCREEN_WIDTH // 2, int(SCREEN_HEIGHT * 0.25))
+    player_pos = (SCREEN_WIDTH // 2, int(SCREEN_HEIGHT * 0.54))
 
     enemy_image = game_assets.combat_enemy_images[villain.id]
     enemy_rect = enemy_image.get_rect(center=enemy_pos)
@@ -648,11 +664,19 @@ def draw_battle_screen() -> None:
     game_assets.screen.blit(game_assets.player_image_combat, player_rect)
 
     # Enemy name at top center
-    draw_text(villain.crime["enemy_name"], game_assets.title_font, BATTLE_TEXT, game_assets.screen, SCREEN_WIDTH // 2, 20, center=True)
+    draw_text(
+        villain.crime["enemy_name"],
+        game_assets.title_font,
+        BATTLE_TEXT,
+        game_assets.screen,
+        SCREEN_WIDTH // 2,
+        46,
+        center=True,
+    )
 
     # Health bars near the top
-    draw_health_bar(game_assets.screen, 110, 50)
-    draw_enemy_health_bar(game_assets.screen, villain, SCREEN_WIDTH - 440, 30)
+    draw_health_bar(game_assets.screen, 110, 52)
+    draw_enemy_health_bar(game_assets.screen, villain, SCREEN_WIDTH - 440, 34)
 
     # Flee button (bottom-left area)
     def draw_battle_button(rect: pygame.Rect, text: str) -> None:
@@ -674,8 +698,6 @@ def draw_battle_screen() -> None:
             hover_overlay.fill((0, 200, 220, 30))
             game_assets.screen.blit(hover_overlay, rect.topleft)
 
-    draw_battle_button(BATTLE_FLEE_RECT, "Fugir")
-
     if game_state.selected_attack_category is None:
         categories = game_state.get_unlocked_categories()
         for index, category in enumerate(categories):
@@ -693,7 +715,7 @@ def draw_battle_screen() -> None:
             BATTLE_TEXT,
             game_assets.screen,
             SCREEN_WIDTH // 2,
-            442,
+            480,
             center=True,
         )
         for index, attack in enumerate(attacks):
@@ -702,6 +724,7 @@ def draw_battle_screen() -> None:
             option_rect = SUBATTACK_OPTION_RECTS[index]
             draw_battle_button(option_rect, f"{index + 1}. {attack['name']}")
 
+    draw_battle_flee_hud_button()
     draw_book_hud_button()
 
     if game_state.feedback_active:
