@@ -349,10 +349,10 @@ def get_attack_by_id(attack_id: str) -> Optional[dict]:
 
 def get_attack_effectiveness(enemy_key: str, attack_id: str) -> str:
     enemy_table = ATTACK_EFFECTIVENESS.get(enemy_key, {})
-    for effectiveness in ("forte", "medio", "fraco"):
+    for effectiveness in ("extremo", "eficaz", "medio", "ineficaz"):
         if attack_id in enemy_table.get(effectiveness, []):
             return effectiveness
-    return "neutro"
+    return "ineficaz"
 
 
 def get_book_entries() -> List[Tuple[str, dict]]:

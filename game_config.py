@@ -43,6 +43,9 @@ TEXT_DARK = (38, 38, 38)
 BATTLE_BUTTON_COLOR = (12, 48, 56, 200)
 BATTLE_BUTTON_BORDER = (0, 200, 220)
 BATTLE_TEXT = (0, 230, 255)
+DEFEAT_BUTTON_COLOR = (56, 10, 24, 210)
+DEFEAT_BUTTON_BORDER = (255, 36, 96)
+DEFEAT_TEXT = (255, 72, 118)
 
 WORLD_MAP_LAYOUT = [
     "####################",
@@ -54,7 +57,7 @@ WORLD_MAP_LAYOUT = [
     "#.#...####.####.##.#",
     "#.#.#....#....#.##.#",
     "#...#.##.######....#",
-    "#.....#........#...#",
+    "#.....#............#",
     "####################",
 ]
 
@@ -348,79 +351,142 @@ CATEGORY_ATTACKS = {
 
 ATTACK_EFFECTIVENESS = {
     "adware": {
-        "forte": ["bloqueador_anuncios"],
-        "medio": ["antivirus"],
-        "fraco": ["backup"],
+        "extremo": ["bloqueador_anuncios", "remover_app_suspeito"],
+        "eficaz": ["antivirus", "atualizacao"],
+        "medio": ["firewall", "permissoes", "verificador_link", "ocultar_dados", "denunciar", "perfil_privado"],
+        "ineficaz": ["backup", "2fa", "download_oficial", "analise_contexto", "bloquear", "checagem_fonte", "verificacao_identidade"],
     },
     "malware": {
-        "forte": ["antivirus"],
-        "medio": ["atualizacao"],
-        "fraco": ["verificador_link"],
+        "extremo": ["antivirus", "remover_app_suspeito"],
+        "eficaz": ["atualizacao", "firewall"],
+        "medio": ["verificador_link", "backup", "bloqueador_anuncios", "permissoes", "download_oficial"],
+        "ineficaz": ["perfil_privado", "2fa", "ocultar_dados", "analise_contexto", "bloquear", "checagem_fonte", "denunciar", "verificacao_identidade"],
     },
     "phishing": {
-        "forte": ["verificador_link"],
-        "medio": ["2fa"],
-        "fraco": ["antivirus"],
+        "extremo": ["verificador_link", "verificacao_identidade"],
+        "eficaz": ["checagem_fonte", "2fa"],
+        "medio": ["analise_contexto", "perfil_privado", "firewall", "permissoes", "ocultar_dados", "denunciar"],
+        "ineficaz": ["antivirus", "backup", "bloqueador_anuncios", "atualizacao", "bloquear", "download_oficial", "remover_app_suspeito"],
     },
     "senha": {
-        "forte": ["2fa"],
-        "medio": ["permissoes"],
-        "fraco": ["bloqueador_anuncios"],
+        "extremo": ["2fa", "permissoes"],
+        "eficaz": ["ocultar_dados", "verificacao_identidade"],
+        "medio": ["perfil_privado", "atualizacao", "firewall", "analise_contexto", "verificador_link"],
+        "ineficaz": ["bloqueador_anuncios", "backup", "antivirus", "bloquear", "checagem_fonte", "denunciar", "download_oficial", "remover_app_suspeito"],
     },
     "ransomware": {
-        "forte": ["backup"],
-        "medio": ["antivirus"],
-        "fraco": ["bloqueador_anuncios"],
+        "extremo": ["backup", "antivirus"],
+        "eficaz": ["atualizacao", "firewall"],
+        "medio": ["verificador_link", "remover_app_suspeito", "download_oficial", "permissoes", "verificacao_identidade", "checagem_fonte"],
+        "ineficaz": ["bloqueador_anuncios", "perfil_privado", "2fa", "analise_contexto", "bloquear", "denunciar", "ocultar_dados"],
     },
     "spyware": {
-        "forte": ["permissoes"],
-        "medio": ["antivirus"],
-        "fraco": ["backup"],
+        "extremo": ["permissoes", "remover_app_suspeito"],
+        "eficaz": ["antivirus", "ocultar_dados"],
+        "medio": ["atualizacao", "firewall", "perfil_privado", "verificador_link", "verificacao_identidade", "2fa", "analise_contexto"],
+        "ineficaz": ["backup", "bloqueador_anuncios", "download_oficial", "bloquear", "checagem_fonte", "denunciar"],
     },
     "golpe": {
-        "forte": ["verificacao_identidade"],
-        "medio": ["verificador_link"],
-        "fraco": ["bloqueador_anuncios"],
+        "extremo": ["verificacao_identidade", "checagem_fonte"],
+        "eficaz": ["verificador_link", "2fa"],
+        "medio": ["analise_contexto", "ocultar_dados", "denunciar", "perfil_privado", "permissoes"],
+        "ineficaz": ["bloqueador_anuncios", "backup", "antivirus", "atualizacao", "bloquear", "download_oficial", "firewall", "remover_app_suspeito"],
     },
     "deepfake": {
-        "forte": ["checagem_fonte"],
-        "medio": ["analise_contexto"],
-        "fraco": ["antivirus"],
+        "extremo": ["checagem_fonte", "analise_contexto"],
+        "eficaz": ["verificacao_identidade", "denunciar"],
+        "medio": ["verificador_link", "perfil_privado", "ocultar_dados", "2fa"],
+        "ineficaz": ["antivirus", "backup", "firewall", "atualizacao", "bloqueador_anuncios", "bloquear", "download_oficial", "permissoes", "remover_app_suspeito"],
     },
     "pirataria": {
-        "forte": ["download_oficial"],
-        "medio": ["antivirus"],
-        "fraco": ["backup"],
+        "extremo": ["download_oficial", "remover_app_suspeito"],
+        "eficaz": ["antivirus", "atualizacao"],
+        "medio": ["backup", "checagem_fonte", "denunciar", "analise_contexto", "verificador_link"],
+        "ineficaz": ["bloquear", "perfil_privado", "2fa", "bloqueador_anuncios", "firewall", "ocultar_dados", "permissoes", "verificacao_identidade"],
     },
     "cyberstalking": {
-        "forte": ["perfil_privado"],
-        "medio": ["bloquear"],
-        "fraco": ["antivirus"],
+        "extremo": ["bloquear", "denunciar"],
+        "eficaz": ["perfil_privado", "ocultar_dados"],
+        "medio": ["verificacao_identidade", "permissoes", "2fa", "analise_contexto", "checagem_fonte"],
+        "ineficaz": ["antivirus", "backup", "bloqueador_anuncios", "atualizacao", "download_oficial", "firewall", "remover_app_suspeito", "verificador_link"],
     },
+}
+
+THREAT_STRATEGY_HINTS = {
+    "adware": (
+        "A fonte dos anuncios importa mais que os sintomas.",
+        "Cortar o canal invasivo tende a render melhor.",
+        "So recuperar o sistema pode nao impedir o retorno.",
+    ),
+    "malware": (
+        "A ameaca parece pedir limpeza direta do dispositivo.",
+        "Fechar falhas e remover codigo suspeito aumenta a pressao.",
+        "Medidas de privacidade sozinhas nao atacam o nucleo do problema.",
+    ),
+    "phishing": (
+        "O golpe depende de link, remetente e identidade.",
+        "Validar sinais da mensagem antes de agir muda a luta.",
+        "Ferramentas do aparelho ajudam pouco se a armadilha for social.",
+    ),
+    "senha": (
+        "A brecha esta na autenticacao da conta.",
+        "Camadas extras de entrada costumam virar esse confronto.",
+        "Bloquear anuncios ou recuperar arquivos nao fortalece a porta.",
+    ),
+    "ransomware": (
+        "Quando arquivos viram refens, recuperacao confiavel pesa muito.",
+        "Prevenir infeccao tambem reduz o estrago.",
+        "Medidas contra anuncios nao resolvem arquivos sequestrados.",
+    ),
+    "spyware": (
+        "Observe quem ainda tem permissao para espiar em silencio.",
+        "Remover apps suspeitos e reduzir coleta de dados enfraquece a ameaca.",
+        "Ter copia dos arquivos nao impede monitoramento ativo.",
+    ),
+    "golpe": (
+        "A fraude se apoia em confianca e identidade.",
+        "Confirmar quem esta do outro lado revela rachaduras no plano.",
+        "Defesas tecnicas ajudam menos quando a pressao e emocional.",
+    ),
+    "deepfake": (
+        "A pista esta na origem e no contexto da midia.",
+        "Comparar fontes derruba melhor a manipulacao.",
+        "Proteger o dispositivo nao prova se o conteudo e real.",
+    ),
+    "pirataria": (
+        "A origem do software e o coracao do risco.",
+        "Remover instalacoes suspeitas reduz o perigo depois do download.",
+        "Defesas sociais ajudam pouco contra um arquivo adulterado.",
+    ),
+    "cyberstalking": (
+        "Reduzir o alcance do agressor muda o ritmo da ameaca.",
+        "Privacidade e registro do abuso trabalham bem juntos.",
+        "Ferramentas contra malware nao resolvem assedio continuo.",
+    ),
 }
 
 EFFECTIVENESS_LABELS = {
-    "forte": "forte",
+    "extremo": "extremamente eficaz",
+    "eficaz": "eficaz",
     "medio": "medio",
-    "fraco": "fraco",
-    "neutro": "neutro",
+    "ineficaz": "ineficaz",
 }
 
 EFFECTIVENESS_DAMAGE = {
-    "forte": 24,
-    "medio": 14,
-    "fraco": 6,
-    "neutro": 10,
+    "extremo": 26,
+    "eficaz": 18,
+    "medio": 10,
+    "ineficaz": 4,
 }
 
 COUNTER_DAMAGE_MODIFIERS = {
-    "forte": -999,
+    "extremo": -999,
+    "eficaz": 0,
     "medio": 0,
-    "fraco": 1,
-    "neutro": 0,
+    "ineficaz": 1,
 }
 
-NON_FINISHING_EFFECTS = {"neutro"}
+NON_FINISHING_EFFECTS = set()
 
 ENEMY_COMBAT_PROFILES = [
     {"max_health": 34, "weakness": "analise", "resistance": "defesa", "counter_damage": 1},
@@ -500,8 +566,13 @@ BOOK_PREV_RECT = pygame.Rect(355, 612, 150, 42)
 BOOK_NEXT_RECT = pygame.Rect(775, 612, 150, 42)
 BOOK_PAGE_SIZE = 2
 
-ENCOUNTER_FIGHT_RECT = pygame.Rect(420, 560, 200, 46)
-ENCOUNTER_FLEE_RECT = pygame.Rect(660, 560, 200, 46)
+VICTORY_MENU_RECT = pygame.Rect(SCREEN_WIDTH // 2 - BATTLE_BUTTON_WIDTH - 20, 610, BATTLE_BUTTON_WIDTH, BATTLE_BUTTON_HEIGHT)
+VICTORY_QUIT_RECT = pygame.Rect(SCREEN_WIDTH // 2 + 20, 610, BATTLE_BUTTON_WIDTH, BATTLE_BUTTON_HEIGHT)
+DEFEAT_MENU_RECT = VICTORY_MENU_RECT.copy()
+DEFEAT_QUIT_RECT = VICTORY_QUIT_RECT.copy()
+
+ENCOUNTER_FIGHT_RECT = pygame.Rect(420, 456, 200, 46)
+ENCOUNTER_FLEE_RECT = pygame.Rect(660, 456, 200, 46)
 
 PAUSE_PANEL_RECT = pygame.Rect(440, 140, 400, 410)
 PAUSE_CONTINUE_RECT = pygame.Rect(500, 210, 280, 50)

@@ -11,6 +11,7 @@ from game_config import (
     NON_FINISHING_EFFECTS,
     PLAYER_SPEED,
     SUBATTACK_OPTION_RECTS,
+    THREAT_STRATEGY_HINTS,
 )
 from game_models import Villain
 
@@ -174,22 +175,18 @@ def calculate_counter_damage(villain: Villain, effectiveness: str) -> int:
     return max(0, villain.counter_damage + modifier)
 
 
-def build_non_ideal_attack_warning(villain: Villain) -> str:
-    ideal_attack_ids = game_state.ATTACK_EFFECTIVENESS.get(villain.enemy_key, {}).get("forte", [])
-    if not ideal_attack_ids:
-        return "Aviso: esse ataque nao e o ideal para esse inimigo."
+def build_subtle_attack_hint(villain: Villain, effectiveness: str) -> str:
+    hints = THREAT_STRATEGY_HINTS.get(villain.enemy_key)
+    if hints is None:
+        return "Pista: observe melhor o comportamento dessa ameaca antes do proximo movimento."
 
-    ideal_attack_names = []
-    for attack_id in ideal_attack_ids:
-        ideal_attack = game_state.get_attack_by_id(attack_id)
-        if ideal_attack is None:
-            ideal_attack_names.append(attack_id.replace("_", " "))
-        else:
-            ideal_attack_names.append(ideal_attack["name"])
-    return (
-        "Aviso: esse ataque nao e o ideal para esse inimigo. "
-        f"Melhor opcao: {', '.join(ideal_attack_names)}."
-    )
+    hint_index_by_effectiveness = {
+        "eficaz": 0,
+        "medio": 1,
+        "ineficaz": 2,
+    }
+    hint_index = hint_index_by_effectiveness.get(effectiveness, 0)
+    return f"Pista: {hints[hint_index]}"
 
 
 def open_battle_feedback(title: str, message: str, tone: str) -> None:
@@ -294,18 +291,17 @@ def resolve_battle_turn(attack: dict) -> None:
     damage = calculate_effective_damage(villain, base_damage, effectiveness)
     villain.health = max(0, villain.health - damage)
 
-    if effectiveness == "forte":
-        attack_result = f"{attack['name']} foi uma escolha forte, teve alto efeito e bloqueou o contra-ataque."
+    if effectiveness == "extremo":
+        attack_result = f"{attack['name']} abriu uma brecha decisiva e bloqueou o contra-ataque."
+    elif effectiveness == "eficaz":
+        attack_result = f"{attack['name']} pressionou bem a ameaca e causou dano consistente."
     elif effectiveness == "medio":
-        attack_result = f"{attack['name']} funcionou bem e teve efeito normal."
-    elif effectiveness == "fraco":
-        attack_result = f"{attack['name']} ajudou pouco contra essa ameaca."
+        attack_result = f"{attack['name']} teve algum efeito, mas nao explorou totalmente a falha."
     else:
-        attack_result = f"{attack['name']} teve efeito parcial. Ataques neutros nao finalizam a ameaca sozinhos."
+        attack_result = f"{attack['name']} quase nao abalou a ameaca."
 
-    if effectiveness != "forte":
-        warning_message = build_non_ideal_attack_warning(villain)
-        attack_result = f"{warning_message} {attack_result}"
+    if effectiveness != "extremo":
+        attack_result = f"{attack_result} {build_subtle_attack_hint(villain, effectiveness)}"
 
     if villain.health <= 0:
         villain.defeated = True
