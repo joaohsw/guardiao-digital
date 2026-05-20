@@ -375,7 +375,6 @@ menu_settings_button_rect = menu_settings_button_image.get_rect(
 
 vitoria_image = pygame.transform.scale(load_image("vitoria.png"), SCREEN_SIZE)
 derrota_image = pygame.transform.scale(load_image("derrota.png"), SCREEN_SIZE)
-introducao_bg = pygame.transform.scale(load_image("introducao.png"), SCREEN_SIZE)
 historia_bg = pygame.transform.scale(load_image("historia.png"), SCREEN_SIZE)
 conclusao_bg = pygame.transform.scale(load_image("conclusao.png"), SCREEN_SIZE)
 

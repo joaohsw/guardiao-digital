@@ -26,7 +26,10 @@ from game_config import (
     START_COLOR,
     SUBATTACK_OPTION_RECTS,
     TEXT_DARK,
+    THREAT_STRATEGY_HINTS,
     TILE_SIZE,
+    VICTORY_MENU_RECT,
+    VICTORY_QUIT_RECT,
     WARNING_BACK_RECT,
     WARNING_PROCEED_RECT,
     WHITE,
@@ -36,6 +39,11 @@ from game_config import (
     BATTLE_BUTTON_COLOR,
     BATTLE_BUTTON_BORDER,
     BATTLE_TEXT,
+    DEFEAT_BUTTON_COLOR,
+    DEFEAT_BUTTON_BORDER,
+    DEFEAT_TEXT,
+    DEFEAT_MENU_RECT,
+    DEFEAT_QUIT_RECT,
     PAUSE_PANEL_RECT,
     PAUSE_CONTINUE_RECT,
     PAUSE_SETTINGS_RECT,
@@ -143,6 +151,33 @@ def draw_battle_flee_hud_button() -> None:
         BATTLE_FLEE_RECT.centery - 1,
         center=True,
     )
+
+
+def draw_cyber_button(
+    rect: pygame.Rect,
+    text: str,
+    fill_color: tuple[int, int, int, int] = BATTLE_BUTTON_COLOR,
+    border_color: tuple[int, int, int] = BATTLE_BUTTON_BORDER,
+    text_color: tuple[int, int, int] = BATTLE_TEXT,
+    hover_color: tuple[int, int, int, int] = (0, 200, 220, 30),
+) -> None:
+    btn_surf = pygame.Surface(rect.size, pygame.SRCALPHA)
+    btn_surf.fill(fill_color)
+    game_assets.screen.blit(btn_surf, rect.topleft)
+    pygame.draw.rect(game_assets.screen, border_color, rect, 2, border_radius=4)
+    draw_text(
+        text,
+        game_assets.help_font,
+        text_color,
+        game_assets.screen,
+        rect.centerx,
+        rect.centery - 1,
+        center=True,
+    )
+    if rect.collidepoint(game_assets.get_virtual_mouse_pos()):
+        hover_overlay = pygame.Surface(rect.size, pygame.SRCALPHA)
+        hover_overlay.fill(hover_color)
+        game_assets.screen.blit(hover_overlay, rect.topleft)
 
 
 def draw_map_notice() -> None:
@@ -445,27 +480,29 @@ def draw_encounter_screen() -> None:
     if villain is None:
         return
 
-    game_assets.screen.blit(game_assets.introducao_bg, (0, 0))
+    draw_world_screen()
+    overlay = pygame.Surface(SCREEN_SIZE, pygame.SRCALPHA)
+    overlay.fill((0, 0, 0, 150))
+    game_assets.screen.blit(overlay, (0, 0))
+
     crime = villain.crime
     enemy_image = game_assets.dossier_enemy_images[villain.id]
 
-    encounter_panel = pygame.Rect(180, 92, 920, 548)
-    draw_panel(encounter_panel)
+    encounter_panel = pygame.Rect(330, 142, 620, 390)
+    draw_panel(encounter_panel, (18, 24, 28, 220))
 
-    draw_text(crime["enemy_name"], game_assets.title_font, WHITE, game_assets.screen, encounter_panel.centerx, 138, center=True)
-    image_rect = enemy_image.get_rect(center=(encounter_panel.centerx, 265))
-    game_assets.screen.blit(enemy_image, image_rect)
-    draw_text_block(
-        crime["description"],
-        game_assets.description_font,
+    draw_text(
+        crime["enemy_name"],
+        game_assets.title_font,
         WHITE,
         game_assets.screen,
-        encounter_panel.x + 54,
-        encounter_panel.y + 330,
-        encounter_panel.width - 108,
-        center=False,
+        encounter_panel.centerx,
+        encounter_panel.y + 54,
+        center=True,
     )
-    # Draw Lutar (Fight) button
+    image_rect = enemy_image.get_rect(center=(encounter_panel.centerx, encounter_panel.y + 190))
+    game_assets.screen.blit(enemy_image, image_rect)
+
     fight_hovered = ENCOUNTER_FIGHT_RECT.collidepoint(game_assets.get_virtual_mouse_pos())
     pygame.draw.rect(game_assets.screen, BUTTON_COLOR, ENCOUNTER_FIGHT_RECT, border_radius=8)
     pygame.draw.rect(game_assets.screen, BUTTON_BORDER, ENCOUNTER_FIGHT_RECT, 2, border_radius=8)
@@ -483,7 +520,6 @@ def draw_encounter_screen() -> None:
         hover_overlay.fill((255, 255, 255, 34))
         game_assets.screen.blit(hover_overlay, ENCOUNTER_FIGHT_RECT.topleft)
 
-    # Draw Fugir (Flee) button
     flee_hovered = ENCOUNTER_FLEE_RECT.collidepoint(game_assets.get_virtual_mouse_pos())
     pygame.draw.rect(game_assets.screen, BUTTON_COLOR, ENCOUNTER_FLEE_RECT, border_radius=8)
     pygame.draw.rect(game_assets.screen, BUTTON_BORDER, ENCOUNTER_FLEE_RECT, 2, border_radius=8)
@@ -805,9 +841,9 @@ def draw_enemy_book_page(enemy_key: str, table: dict, area: pygame.Rect) -> None
     }
     colors = {
         "text": TEXT_DARK,
-        "forte": (34, 116, 60),
-        "medio": (74, 82, 99),
-        "fraco": (138, 54, 45),
+        "hint": (34, 116, 60),
+        "focus": (74, 82, 99),
+        "caution": (138, 54, 45),
     }
 
     title_y = area.y + 18
@@ -829,11 +865,19 @@ def draw_enemy_book_page(enemy_key: str, table: dict, area: pygame.Rect) -> None
     item_width = block_width - item_offset
     line_y = area.y + 74
     line_spacing = 88
+    hints = THREAT_STRATEGY_HINTS.get(
+        enemy_key,
+        (
+            "Observe o comportamento da ameaca antes de agir.",
+            "Procure a camada de defesa mais ligada ao risco.",
+            "Evite respostas que tratem apenas sintomas.",
+        ),
+    )
 
     rows = [
-        ("Forte", format_book_attack_name(table["forte"]), colors["forte"]),
-        ("Medio", format_book_attack_name(table["medio"]), colors["medio"]),
-        ("Fraco", format_book_attack_name(table["fraco"]), colors["fraco"]),
+        ("Pista", hints[0], colors["hint"]),
+        ("Foco", hints[1], colors["focus"]),
+        ("Evite", hints[2], colors["caution"]),
     ]
 
     for label, item, label_color in rows:
@@ -945,8 +989,28 @@ def draw_conclusion_screen() -> None:
 def draw_end_screen() -> None:
     if game_state.game_state == "victory":
         game_assets.screen.blit(game_assets.vitoria_image, (0, 0))
+        draw_cyber_button(VICTORY_MENU_RECT, "Menu")
+        draw_cyber_button(VICTORY_QUIT_RECT, "Sair")
+        return
     elif game_state.game_state == "game_over":
         game_assets.screen.blit(game_assets.derrota_image, (0, 0))
+        draw_cyber_button(
+            DEFEAT_MENU_RECT,
+            "Menu",
+            DEFEAT_BUTTON_COLOR,
+            DEFEAT_BUTTON_BORDER,
+            DEFEAT_TEXT,
+            (255, 36, 96, 34),
+        )
+        draw_cyber_button(
+            DEFEAT_QUIT_RECT,
+            "Sair",
+            DEFEAT_BUTTON_COLOR,
+            DEFEAT_BUTTON_BORDER,
+            DEFEAT_TEXT,
+            (255, 36, 96, 34),
+        )
+        return
 
     end_panel = pygame.Rect(290, 618, 700, 56)
     draw_panel(end_panel, (18, 24, 28, 200))

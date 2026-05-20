@@ -22,6 +22,10 @@ from game_config import (
     PAUSE_SETTINGS_RECT,
     PAUSE_MENU_RECT,
     PAUSE_QUIT_RECT,
+    VICTORY_MENU_RECT,
+    VICTORY_QUIT_RECT,
+    DEFEAT_MENU_RECT,
+    DEFEAT_QUIT_RECT,
 )
 
 
@@ -181,9 +185,29 @@ def main() -> None:
                 if (event.type == pygame.KEYDOWN and event.key == pygame.K_RETURN) or event.type == pygame.MOUSEBUTTONDOWN:
                     game_state.game_state = "victory"
 
-            elif game_state.game_state in ("victory", "game_over"):
-                if (event.type == pygame.KEYDOWN and event.key == pygame.K_RETURN) or event.type == pygame.MOUSEBUTTONDOWN:
-                    game_state.game_state = "menu"
+            elif game_state.game_state == "victory":
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_RETURN:
+                        game_state.game_state = "menu"
+                    elif event.key == pygame.K_ESCAPE:
+                        running = False
+                elif event.type == pygame.MOUSEBUTTONDOWN and mouse_pos is not None:
+                    if VICTORY_MENU_RECT.collidepoint(mouse_pos):
+                        game_state.game_state = "menu"
+                    elif VICTORY_QUIT_RECT.collidepoint(mouse_pos):
+                        running = False
+
+            elif game_state.game_state == "game_over":
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_RETURN:
+                        game_state.game_state = "menu"
+                    elif event.key == pygame.K_ESCAPE:
+                        running = False
+                elif event.type == pygame.MOUSEBUTTONDOWN and mouse_pos is not None:
+                    if DEFEAT_MENU_RECT.collidepoint(mouse_pos):
+                        game_state.game_state = "menu"
+                    elif DEFEAT_QUIT_RECT.collidepoint(mouse_pos):
+                        running = False
 
         if game_state.game_state == "exploring":
             game_logic.update_exploration(dt)
