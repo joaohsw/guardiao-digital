@@ -5,6 +5,7 @@ import pygame
 import game_assets
 import game_state
 from game_config import (
+    BATTLE_BACK_RECT,
     BATTLE_OPTION_RECTS,
     COUNTER_DAMAGE_MODIFIERS,
     EFFECTIVENESS_DAMAGE,
@@ -229,6 +230,19 @@ def get_available_battle_attacks() -> list[dict]:
 def select_battle_category(category: str) -> None:
     if category in game_state.get_unlocked_categories():
         game_state.selected_attack_category = category
+
+
+def return_to_battle_categories() -> None:
+    game_state.selected_attack_category = None
+
+
+def handle_battle_back_button(pos: Tuple[int, int]) -> bool:
+    if game_state.selected_attack_category is None:
+        return False
+    if not BATTLE_BACK_RECT.collidepoint(pos):
+        return False
+    return_to_battle_categories()
+    return True
 
 
 def select_battle_category_at_pos(pos: Tuple[int, int]) -> bool:

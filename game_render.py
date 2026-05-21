@@ -6,6 +6,7 @@ import game_assets
 import game_state
 from game_config import (
     ATTACK_CATEGORIES,
+    BATTLE_BACK_RECT,
     BATTLE_FLEE_RECT,
     BATTLE_OPTION_RECTS,
     BOOK_CLOSE_RECT,
@@ -153,6 +154,16 @@ def draw_battle_flee_hud_button() -> None:
     )
 
 
+def draw_combat_back_button() -> None:
+    hovered = BATTLE_BACK_RECT.collidepoint(game_assets.get_virtual_mouse_pos())
+    draw_rect = BATTLE_BACK_RECT.inflate(6, 6) if hovered else BATTLE_BACK_RECT
+    image = game_assets.get_combat_back_arrow_image(draw_rect.size)
+    if hovered:
+        image = image.copy()
+        image.fill((32, 32, 32, 0), special_flags=pygame.BLEND_RGBA_ADD)
+    game_assets.screen.blit(image, draw_rect.topleft)
+
+
 def draw_cyber_button(
     rect: pygame.Rect,
     text: str,
@@ -178,6 +189,39 @@ def draw_cyber_button(
         hover_overlay = pygame.Surface(rect.size, pygame.SRCALPHA)
         hover_overlay.fill(hover_color)
         game_assets.screen.blit(hover_overlay, rect.topleft)
+
+
+def draw_attack_categories() -> None:
+    categories = game_state.get_unlocked_categories()
+    for index, category in enumerate(categories):
+        if index >= len(BATTLE_OPTION_RECTS):
+            break
+        option_rect = BATTLE_OPTION_RECTS[index]
+        category_data = ATTACK_CATEGORIES[category]
+        draw_cyber_button(option_rect, f"{index + 1}. {category_data['name']}")
+
+
+def draw_attack_options() -> None:
+    if game_state.selected_attack_category is None:
+        return
+
+    category_name = ATTACK_CATEGORIES[game_state.selected_attack_category]["name"]
+    attacks = game_state.get_unlocked_attacks_for_category(game_state.selected_attack_category)
+    draw_combat_back_button()
+    draw_text(
+        f"Categoria: {category_name}",
+        game_assets.description_font,
+        BATTLE_TEXT,
+        game_assets.screen,
+        SCREEN_WIDTH // 2,
+        480,
+        center=True,
+    )
+    for index, attack in enumerate(attacks):
+        if index >= len(SUBATTACK_OPTION_RECTS):
+            break
+        option_rect = SUBATTACK_OPTION_RECTS[index]
+        draw_cyber_button(option_rect, f"{index + 1}. {attack['name']}")
 
 
 def draw_map_notice() -> None:
@@ -723,51 +767,10 @@ def draw_battle_screen() -> None:
     enemy_bar_y = max(72, enemy_rect.top - 32)
     draw_enemy_health_bar(game_assets.screen, villain, enemy_bar_x, enemy_bar_y, enemy_bar_width)
 
-    # Flee button (bottom-left area)
-    def draw_battle_button(rect: pygame.Rect, text: str) -> None:
-        btn_surf = pygame.Surface(rect.size, pygame.SRCALPHA)
-        btn_surf.fill(BATTLE_BUTTON_COLOR)
-        game_assets.screen.blit(btn_surf, rect.topleft)
-        pygame.draw.rect(game_assets.screen, BATTLE_BUTTON_BORDER, rect, 2, border_radius=4)
-        draw_text(
-            text,
-            game_assets.help_font,
-            BATTLE_TEXT,
-            game_assets.screen,
-            rect.centerx,
-            rect.centery - 1,
-            center=True,
-        )
-        if rect.collidepoint(game_assets.get_virtual_mouse_pos()):
-            hover_overlay = pygame.Surface(rect.size, pygame.SRCALPHA)
-            hover_overlay.fill((0, 200, 220, 30))
-            game_assets.screen.blit(hover_overlay, rect.topleft)
-
     if game_state.selected_attack_category is None:
-        categories = game_state.get_unlocked_categories()
-        for index, category in enumerate(categories):
-            if index >= len(BATTLE_OPTION_RECTS):
-                break
-            option_rect = BATTLE_OPTION_RECTS[index]
-            category_data = ATTACK_CATEGORIES[category]
-            draw_battle_button(option_rect, f"{index + 1}. {category_data['name']}")
+        draw_attack_categories()
     else:
-        category_name = ATTACK_CATEGORIES[game_state.selected_attack_category]["name"]
-        attacks = game_state.get_unlocked_attacks_for_category(game_state.selected_attack_category)
-        draw_text(
-            f"Categoria: {category_name}",
-            game_assets.description_font,
-            BATTLE_TEXT,
-            game_assets.screen,
-            SCREEN_WIDTH // 2,
-            480,
-            center=True,
-        )
-        for index, attack in enumerate(attacks):
-            if index >= len(SUBATTACK_OPTION_RECTS):
-                break
-            option_rect = SUBATTACK_OPTION_RECTS[index]
-            draw_battle_button(option_rect, f"{index + 1}. {attack['name']}")
+        draw_attack_options()
 
     draw_battle_flee_hud_button()
     draw_book_hud_button()

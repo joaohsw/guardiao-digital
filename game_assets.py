@@ -349,6 +349,21 @@ def get_proceed_button_image(target_size: Tuple[int, int]) -> pygame.Surface:
     return scaled
 
 
+combat_back_arrow_source = load_image("flecha.png", use_alpha=True)
+_combat_back_arrow_cache: dict[Tuple[int, int], pygame.Surface] = {}
+
+
+def get_combat_back_arrow_image(target_size: Tuple[int, int]) -> pygame.Surface:
+    width, height = max(1, target_size[0]), max(1, target_size[1])
+    cache_key = (width, height)
+    cached = _combat_back_arrow_cache.get(cache_key)
+    if cached is not None:
+        return cached
+    scaled = pygame.transform.smoothscale(combat_back_arrow_source, cache_key)
+    _combat_back_arrow_cache[cache_key] = scaled
+    return scaled
+
+
 combate_bg = pygame.transform.scale(load_image("combate.png"), SCREEN_SIZE)
 menu_image = pygame.transform.scale(load_image("menu.png"), SCREEN_SIZE)
 settings_background = pygame.transform.scale(load_image("settings_background.png"), SCREEN_SIZE)

@@ -140,7 +140,7 @@ def main() -> None:
                     selected_attack: Optional[dict] = None
                     if event.type == pygame.KEYDOWN:
                         if event.key == pygame.K_ESCAPE and game_state.selected_attack_category is not None:
-                            game_state.selected_attack_category = None
+                            game_logic.return_to_battle_categories()
                         elif event.key == pygame.K_ESCAPE:
                             game_logic.flee_battle()
                         elif game_state.selected_attack_category is None:
@@ -160,6 +160,8 @@ def main() -> None:
                         if game_state.selected_attack_category is None:
                             game_logic.select_battle_category_at_pos(mouse_pos)
                         else:
+                            if game_logic.handle_battle_back_button(mouse_pos):
+                                continue
                             selected_attack = game_logic.get_battle_attack_at_pos(mouse_pos)
 
                     if selected_attack is not None:
