@@ -361,10 +361,13 @@ def get_book_entries() -> List[Tuple[str, dict]]:
 
 def get_book_page_count() -> int:
     entries_count = len(get_book_entries())
-    return max(1, (entries_count + BOOK_PAGE_SIZE - 1) // BOOK_PAGE_SIZE)
+    enemy_page_count = (entries_count + BOOK_PAGE_SIZE - 1) // BOOK_PAGE_SIZE
+    return max(1, enemy_page_count + 1)
 
 
 def get_current_book_entries() -> List[Tuple[str, dict]]:
-    start = book_page * BOOK_PAGE_SIZE
+    if book_page == 0:
+        return []
+    start = (book_page - 1) * BOOK_PAGE_SIZE
     end = start + BOOK_PAGE_SIZE
     return get_book_entries()[start:end]

@@ -508,12 +508,11 @@ GAME_STORY = (
 )
 
 CONCLUSION_TEXT = (
-    "Voce neutralizou todas as ameacas do mapa.\n"
-    "Leve essas praticas para fora do jogo:\n"
-    "- Senhas fortes e unicas em cada servico.\n"
-    "- Desconfianca de links e mensagens urgentes.\n"
-    "- Atualizacao constante de apps e sistema.\n"
-    "- Compartilhar orientacoes de seguranca com outras pessoas."
+    "Voce explorou o mapa, enfrentou cada ameaca digital e completou o Guia Digital Magico.\n"
+    "\n"
+    "As paginas do guia agora guardam as pistas, os focos e os cuidados que ajudaram voce a escolher melhor em cada combate.\n"
+    "\n"
+    "Fora do jogo, continue como um Guardiao Digital: confirme fontes, proteja suas contas, desconfie da pressa e pense antes de clicar."
 )
 
 MAP_ROWS = len(WORLD_MAP_LAYOUT)

@@ -122,10 +122,13 @@ def draw_book_hud_button() -> None:
     pygame.draw.rect(game_assets.screen, BUTTON_COLOR, BOOK_HUD_RECT, border_radius=8)
     pygame.draw.rect(game_assets.screen, BUTTON_BORDER, BOOK_HUD_RECT, 2, border_radius=8)
     icon = game_assets.collectible_images["book"]
+    bounds = icon.get_bounding_rect(min_alpha=8)
+    if bounds.width > 0 and bounds.height > 0:
+        icon = icon.subsurface(bounds).copy()
     
     # Scale proportionally to fit inside 36x36 without squishing
     orig_w, orig_h = icon.get_size()
-    max_dim = 24
+    max_dim = 30
     if orig_w > orig_h:
         new_w = max_dim
         new_h = int(orig_h * (max_dim / orig_w))
@@ -474,7 +477,7 @@ def draw_story_screen() -> None:
     )
 
 
-def draw_world_screen() -> None:
+def draw_world_screen(show_map_notice: bool = True) -> None:
     game_assets.screen.fill((23, 32, 31))
 
     for row_index, row in enumerate(WORLD_MAP_LAYOUT):
@@ -516,15 +519,16 @@ def draw_world_screen() -> None:
     game_assets.screen.blit(hud, (0, 0))
     draw_health_bar(game_assets.screen, 16, 14)
     draw_book_hud_button()
-    draw_map_notice()
+    if show_map_notice:
+        draw_map_notice()
 
 
-def draw_encounter_screen() -> None:
+def draw_encounter_screen(show_map_notice: bool = True) -> None:
     villain = game_state.get_active_villain()
     if villain is None:
         return
 
-    draw_world_screen()
+    draw_world_screen(show_map_notice)
     overlay = pygame.Surface(SCREEN_SIZE, pygame.SRCALPHA)
     overlay.fill((0, 0, 0, 150))
     game_assets.screen.blit(overlay, (0, 0))
@@ -781,7 +785,7 @@ def draw_battle_screen() -> None:
 
 def get_book_page_areas(book_rect: pygame.Rect) -> tuple[pygame.Rect, pygame.Rect]:
     margin_x = 78
-    margin_top = 106
+    margin_top = 90
     margin_bottom = 92
     center_spacing = 0
 
@@ -822,8 +826,8 @@ def draw_book_text(
     return rect
 
 
-def draw_book_value(text: str, font: pygame.font.Font, color: tuple[int, int, int], rect: pygame.Rect) -> None:
-    draw_text_block(
+def draw_book_value(text: str, font: pygame.font.Font, color: tuple[int, int, int], rect: pygame.Rect) -> int:
+    return draw_text_block(
         text,
         font,
         color,
@@ -867,7 +871,7 @@ def draw_enemy_book_page(enemy_key: str, table: dict, area: pygame.Rect) -> None
     item_x = block_start_x + item_offset
     item_width = block_width - item_offset
     line_y = area.y + 74
-    line_spacing = 88
+    row_gap = 18
     hints = THREAT_STRATEGY_HINTS.get(
         enemy_key,
         (
@@ -886,12 +890,81 @@ def draw_enemy_book_page(enemy_key: str, table: dict, area: pygame.Rect) -> None
     for label, item, label_color in rows:
         draw_book_text(game_assets.screen, label, fonts["label"], label_color, label_x, line_y)
         item_rect = pygame.Rect(item_x, line_y, item_width, 62)
-        draw_book_value(item, fonts["item"], colors["text"], item_rect)
-        line_y += line_spacing
+        item_bottom = draw_book_value(item, fonts["item"], colors["text"], item_rect)
+        label_bottom = line_y + fonts["label"].get_height()
+        line_y = max(label_bottom, item_bottom) + row_gap
 
 
 def get_book_entries_for_current_page() -> list[tuple[str, dict]]:
     return game_state.get_current_book_entries()
+
+
+def draw_book_intro_page(left_page: pygame.Rect, right_page: pygame.Rect) -> None:
+    left_text_x = left_page.x + 42
+    right_text_x = right_page.x + 46
+
+    draw_book_text(
+        game_assets.screen,
+        "O guia acorda",
+        game_assets.description_font,
+        TEXT_DARK,
+        left_page.centerx,
+        left_page.y + 38,
+        centered=True,
+    )
+    draw_text_block(
+        "Voce encontrou um livro especial: ele guarda pistas para enfrentar as ameacas digitais.",
+        game_assets.book_content_font,
+        TEXT_DARK,
+        game_assets.screen,
+        left_text_x,
+        left_page.y + 92,
+        left_page.width - 82,
+        center=False,
+        line_gap=7,
+    )
+    draw_text_block(
+        "Cada pagina funciona como uma bussola. Leia com calma, compare os sinais e escolha melhor.",
+        game_assets.book_content_font,
+        TEXT_DARK,
+        game_assets.screen,
+        left_text_x,
+        left_page.y + 212,
+        left_page.width - 82,
+        center=False,
+        line_gap=7,
+    )
+    draw_book_text(
+        game_assets.screen,
+        "Nas margens",
+        game_assets.description_font,
+        TEXT_DARK,
+        right_page.centerx,
+        right_page.y + 38,
+        centered=True,
+    )
+    draw_text_block(
+        "O guia mostra tres sinais: uma pista, um foco e um cuidado que voce deve evitar.",
+        game_assets.book_content_font,
+        TEXT_DARK,
+        game_assets.screen,
+        right_text_x,
+        right_page.y + 92,
+        right_page.width - 92,
+        center=False,
+        line_gap=7,
+    )
+    draw_text_block(
+        "Quando a duvida aparecer, abra o livro. Ele nao luta por voce, mas ilumina o caminho.",
+        game_assets.book_content_font,
+        TEXT_DARK,
+        game_assets.screen,
+        right_text_x,
+        right_page.y + 250,
+        right_page.width - 92,
+        center=False,
+        line_gap=7,
+    )
 
 
 def draw_book_button(rect: pygame.Rect, label: str, enabled: bool = True) -> None:
@@ -905,8 +978,17 @@ def draw_book_button(rect: pygame.Rect, label: str, enabled: bool = True) -> Non
     draw_text(label, game_assets.help_font, text_color, game_assets.screen, rect.centerx, rect.centery - 2, center=True)
 
 
+def draw_book_background() -> None:
+    if game_state.last_game_state == "battle":
+        draw_battle_screen()
+    elif game_state.last_game_state == "encounter":
+        draw_encounter_screen(show_map_notice=False)
+    else:
+        draw_world_screen(show_map_notice=False)
+
+
 def draw_book_screen() -> None:
-    game_assets.screen.fill((23, 32, 31))
+    draw_book_background()
     book_rect = game_assets.book_open_image.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2))
 
     draw_book_text(
@@ -923,12 +1005,15 @@ def draw_book_screen() -> None:
     left_page, right_page = get_book_page_areas(book_rect)
     page_areas = [left_page, right_page]
     entries = get_book_entries_for_current_page()
-    for index, (enemy_key, table) in enumerate(entries):
-        if index >= len(page_areas):
-            break
-        draw_enemy_book_page(enemy_key, table, page_areas[index])
+    if game_state.book_page == 0:
+        draw_book_intro_page(left_page, right_page)
+    else:
+        for index, (enemy_key, table) in enumerate(entries):
+            if index >= len(page_areas):
+                break
+            draw_enemy_book_page(enemy_key, table, page_areas[index])
 
-    if len(entries) < 2:
+    if game_state.book_page > 0 and len(entries) < 2:
         empty_area = page_areas[len(entries)]
         draw_book_text(
             game_assets.screen,
@@ -947,14 +1032,16 @@ def draw_book_screen() -> None:
         )
 
     page_count = game_state.get_book_page_count()
-    page_label = f"Pagina {game_state.book_page + 1}/{page_count}"
+    page_label = f"{game_state.book_page + 1}/{page_count}"
+    page_counter_rect = pygame.Rect(SCREEN_WIDTH // 2 - 70, BOOK_CLOSE_RECT.bottom + 10, 140, 36)
+    draw_panel(page_counter_rect, (18, 24, 28, 225))
     draw_book_text(
         game_assets.screen,
         page_label,
         game_assets.help_font,
         WHITE,
-        SCREEN_WIDTH // 2,
-        BOOK_CLOSE_RECT.y - 24,
+        page_counter_rect.centerx,
+        page_counter_rect.centery - 1,
         centered=True,
     )
 
@@ -964,22 +1051,22 @@ def draw_book_screen() -> None:
 
 
 def draw_conclusion_screen() -> None:
-    game_assets.screen.blit(game_assets.conclusao_bg, (0, 0))
+    game_assets.screen.blit(game_assets.settings_background, (0, 0))
     conclusion_panel = pygame.Rect(160, 96, 960, 536)
     draw_panel(conclusion_panel)
-    draw_text("Missao concluida", game_assets.title_font, GREEN, game_assets.screen, conclusion_panel.centerx, 146, center=True)
+    draw_text("Guia completo", game_assets.title_font, GREEN, game_assets.screen, conclusion_panel.centerx, 146, center=True)
     draw_text_block(
         CONCLUSION_TEXT,
         game_assets.description_font,
         WHITE,
         game_assets.screen,
         conclusion_panel.x + 60,
-        conclusion_panel.y + 220,
+        conclusion_panel.y + 182,
         conclusion_panel.width - 120,
         center=False,
     )
     draw_text(
-        "ENTER ou clique para tela de vitoria",
+        "ENTER ou clique para continuar",
         game_assets.help_font,
         WHITE,
         game_assets.screen,

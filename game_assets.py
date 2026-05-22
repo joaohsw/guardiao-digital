@@ -159,7 +159,7 @@ description_font = load_font("Minecraftia-Regular.ttf", 17)
 story_font = load_font("Minecraftia-Regular.ttf", 16)
 help_font = load_font("Minecraftia-Regular.ttf", 12)
 small_font = load_font("Minecraftia-Regular.ttf", 10)
-book_content_font = load_font("Minecraftia-Regular.ttf", 14)
+book_content_font = load_font("Minecraftia-Regular.ttf", 13)
 
 PLAYER_WALK_SHEET_FILENAME = "personagem_walk.png"
 PLAYER_WALK_SHEET_COLUMNS = 4
@@ -391,7 +391,6 @@ menu_settings_button_rect = menu_settings_button_image.get_rect(
 vitoria_image = pygame.transform.scale(load_image("vitoria.png"), SCREEN_SIZE)
 derrota_image = pygame.transform.scale(load_image("derrota.png"), SCREEN_SIZE)
 historia_bg = pygame.transform.scale(load_image("historia.png"), SCREEN_SIZE)
-conclusao_bg = pygame.transform.scale(load_image("conclusao.png"), SCREEN_SIZE)
 
 player_source = load_image("personagem.png", use_alpha=True)
 player_image_combat = scale_image_proportional_height(player_source, int(SCREEN_HEIGHT * 0.30))
@@ -426,6 +425,7 @@ collectible_images = {
     key: scale_image_proportional_height(load_image(filename, use_alpha=True), TILE_SIZE - 22)
     for key, filename in collectible_filenames.items()
 }
+collectible_images["book"] = scale_image_proportional_height(load_image(collectible_filenames["book"], use_alpha=True), TILE_SIZE - 28)
 collectible_images["cura"] = create_healing_icon(TILE_SIZE - 22)
 
 book_open_image = pygame.transform.scale(load_image("livro_aberto.png", use_alpha=True), (900, 600))
