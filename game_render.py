@@ -311,6 +311,29 @@ def get_settings_resolution_at_pos(pos: tuple[int, int]) -> Optional[tuple[int, 
     return None
 
 
+def get_settings_volume_slider_rect() -> pygame.Rect:
+    panel = get_settings_panel_rect()
+    return pygame.Rect(panel.x + 116, panel.y + 420, panel.width - 232, 14)
+
+
+def get_settings_volume_hit_rect() -> pygame.Rect:
+    return get_settings_volume_slider_rect().inflate(28, 34)
+
+
+def get_settings_volume_knob_rect() -> pygame.Rect:
+    slider_rect = get_settings_volume_slider_rect()
+    knob_x = slider_rect.x + round(slider_rect.width * game_assets.music_volume)
+    knob_rect = pygame.Rect(0, 0, 26, 34)
+    knob_rect.center = (knob_x, slider_rect.centery)
+    return knob_rect
+
+
+def get_settings_volume_at_pos(pos: tuple[int, int]) -> float:
+    slider_rect = get_settings_volume_slider_rect()
+    relative_x = pos[0] - slider_rect.x
+    return max(0.0, min(1.0, relative_x / slider_rect.width))
+
+
 def get_settings_back_rect() -> pygame.Rect:
     panel = get_settings_panel_rect()
     return pygame.Rect(panel.centerx - 150, panel.bottom - 84, 300, 54)
@@ -343,7 +366,7 @@ def draw_settings_screen() -> None:
 
     draw_text("Configuracoes", game_assets.title_font, WHITE, game_assets.screen, panel.centerx, panel.y + 40, center=True)
     draw_text(
-        "Ajustes de exibicao",
+        "Ajustes de exibicao e audio",
         game_assets.help_font,
         WHITE,
         game_assets.screen,
@@ -410,6 +433,42 @@ def draw_settings_screen() -> None:
         toggle_rect.centery - 14,
         center=True,
     )
+
+    volume_percent = round(game_assets.music_volume * 100)
+    draw_text(
+        "Volume da musica",
+        game_assets.description_font,
+        WHITE,
+        game_assets.screen,
+        panel.x + 92,
+        panel.y + 354,
+    )
+    draw_text(
+        f"{volume_percent}%",
+        game_assets.description_font,
+        WHITE,
+        game_assets.screen,
+        panel.right - 150,
+        panel.y + 354,
+    )
+
+    slider_rect = get_settings_volume_slider_rect()
+    fill_rect = slider_rect.copy()
+    fill_rect.width = round(slider_rect.width * game_assets.music_volume)
+    slider_hovered = (
+        get_settings_volume_hit_rect().collidepoint(mouse_pos)
+        or game_state.settings_volume_dragging
+    )
+
+    pygame.draw.rect(game_assets.screen, BUTTON_COLOR, slider_rect, border_radius=8)
+    if fill_rect.width > 0:
+        pygame.draw.rect(game_assets.screen, (41, 112, 120), fill_rect, border_radius=8)
+    pygame.draw.rect(game_assets.screen, BUTTON_BORDER, slider_rect, 2, border_radius=8)
+
+    knob_rect = get_settings_volume_knob_rect()
+    knob_fill = (237, 233, 214) if slider_hovered else BUTTON_COLOR
+    pygame.draw.rect(game_assets.screen, knob_fill, knob_rect, border_radius=8)
+    pygame.draw.rect(game_assets.screen, BUTTON_BORDER, knob_rect, 2, border_radius=8)
 
     if game_state.settings_resolution_dropdown_open:
         for resolution, rect in get_settings_resolution_rects():

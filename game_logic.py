@@ -400,3 +400,7 @@ def toggle_fullscreen() -> None:
 def set_resolution(resolution: Tuple[int, int]) -> None:
     game_assets.set_resolution(resolution)
 
+
+def set_music_volume(volume: float) -> None:
+    game_assets.set_music_volume(volume)
+

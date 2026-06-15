@@ -64,16 +64,26 @@ def main() -> None:
                         game_logic.open_story_screen()
                     elif game_assets.menu_settings_button_rect.collidepoint(mouse_pos):
                         game_state.settings_resolution_dropdown_open = False
+                        game_state.settings_volume_dragging = False
                         game_state.last_game_state = "menu"
                         game_state.game_state = "settings"
 
             elif game_state.game_state == "settings":
-                if event.type == pygame.KEYDOWN:
+                if event.type == pygame.MOUSEBUTTONUP:
+                    game_state.settings_volume_dragging = False
+                elif (
+                    event.type == pygame.MOUSEMOTION
+                    and game_state.settings_volume_dragging
+                    and mouse_pos is not None
+                ):
+                    game_logic.set_music_volume(game_render.get_settings_volume_at_pos(mouse_pos))
+                elif event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_ESCAPE:
                         if game_state.settings_resolution_dropdown_open:
                             game_state.settings_resolution_dropdown_open = False
                         else:
                             game_state.settings_resolution_dropdown_open = False
+                            game_state.settings_volume_dragging = False
                             game_state.game_state = game_state.last_game_state
                     elif event.key in (pygame.K_RETURN, pygame.K_SPACE):
                         game_logic.toggle_fullscreen()
@@ -82,14 +92,20 @@ def main() -> None:
                         game_logic.toggle_fullscreen()
                     elif game_render.get_settings_back_rect().collidepoint(mouse_pos):
                         game_state.settings_resolution_dropdown_open = False
+                        game_state.settings_volume_dragging = False
                         game_state.game_state = game_state.last_game_state
                     elif game_render.get_settings_resolution_toggle_rect().collidepoint(mouse_pos):
+                        game_state.settings_volume_dragging = False
                         game_state.settings_resolution_dropdown_open = not game_state.settings_resolution_dropdown_open
                     elif game_state.settings_resolution_dropdown_open:
                         selected_resolution = game_render.get_settings_resolution_at_pos(mouse_pos)
                         if selected_resolution is not None:
                             game_logic.set_resolution(selected_resolution)
                         game_state.settings_resolution_dropdown_open = False
+                    elif game_render.get_settings_volume_hit_rect().collidepoint(mouse_pos):
+                        game_state.settings_resolution_dropdown_open = False
+                        game_state.settings_volume_dragging = True
+                        game_logic.set_music_volume(game_render.get_settings_volume_at_pos(mouse_pos))
 
             elif game_state.game_state == "story":
                 if (
@@ -112,6 +128,7 @@ def main() -> None:
                         game_logic.open_story_screen("paused")
                     elif PAUSE_SETTINGS_RECT.collidepoint(mouse_pos):
                         game_state.settings_resolution_dropdown_open = False
+                        game_state.settings_volume_dragging = False
                         game_state.last_game_state = "paused"
                         game_state.game_state = "settings"
                     elif PAUSE_MENU_RECT.collidepoint(mouse_pos):

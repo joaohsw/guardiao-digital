@@ -13,6 +13,8 @@ from game_config import (
     WINDOW_TITLE,
 )
 
+os.environ.setdefault("SDL_VIDEO_CENTERED", "1")
+
 pygame.init()
 
 pygame.display.set_caption(WINDOW_TITLE)
@@ -49,9 +51,9 @@ def build_resolution_options(monitor_resolution: Tuple[int, int]) -> List[Tuple[
 monitor_resolution = get_monitor_resolution()
 resolution_options = build_resolution_options(monitor_resolution)
 current_resolution = monitor_resolution
-fullscreen = True
+fullscreen = False
 
-_display_surface = pygame.display.set_mode(current_resolution, pygame.FULLSCREEN)
+_display_surface = pygame.display.set_mode(current_resolution, pygame.NOFRAME)
 screen = pygame.Surface(SCREEN_SIZE).convert()
 _render_size = SCREEN_SIZE
 _render_offset = (0, 0)
@@ -59,15 +61,10 @@ _render_offset = (0, 0)
 
 def _recalculate_render_target() -> None:
     global _render_size, _render_offset
-    scale_x = current_resolution[0] / SCREEN_WIDTH
-    scale_y = current_resolution[1] / SCREEN_HEIGHT
-    scale = min(scale_x, scale_y)
-    target_width = max(1, int(SCREEN_WIDTH * scale))
-    target_height = max(1, int(SCREEN_HEIGHT * scale))
-    offset_x = (current_resolution[0] - target_width) // 2
-    offset_y = (current_resolution[1] - target_height) // 2
+    target_width = max(1, int(current_resolution[0]))
+    target_height = max(1, int(current_resolution[1]))
     _render_size = (target_width, target_height)
-    _render_offset = (offset_x, offset_y)
+    _render_offset = (0, 0)
 
 
 _recalculate_render_target()
@@ -85,13 +82,13 @@ def set_display_mode(
     if force_fullscreen is not None:
         fullscreen = force_fullscreen
 
-    flags = pygame.FULLSCREEN if fullscreen else 0
+    flags = pygame.FULLSCREEN if fullscreen else pygame.NOFRAME
     try:
         _display_surface = pygame.display.set_mode(current_resolution, flags)
     except pygame.error:
         current_resolution = previous_resolution
         fullscreen = previous_fullscreen
-        fallback_flags = pygame.FULLSCREEN if fullscreen else 0
+        fallback_flags = pygame.FULLSCREEN if fullscreen else pygame.NOFRAME
         _display_surface = pygame.display.set_mode(current_resolution, fallback_flags)
     current_resolution = _display_surface.get_size()
     _recalculate_render_target()
@@ -103,6 +100,48 @@ def set_resolution(resolution: Tuple[int, int]) -> None:
 
 def toggle_fullscreen() -> None:
     set_display_mode(force_fullscreen=not fullscreen)
+
+
+def clamp_music_volume(volume: float) -> float:
+    return max(0.0, min(1.0, float(volume)))
+
+
+def ensure_audio_ready() -> bool:
+    if pygame.mixer.get_init() is not None:
+        return True
+    try:
+        pygame.mixer.init()
+    except pygame.error:
+        return False
+    return True
+
+
+def set_music_volume(volume: float) -> None:
+    global music_volume
+    music_volume = clamp_music_volume(volume)
+    if pygame.mixer.get_init() is None:
+        return
+    try:
+        pygame.mixer.music.set_volume(music_volume)
+    except pygame.error:
+        pass
+
+
+def play_background_music() -> None:
+    global background_music_available
+    music_path = os.path.join(ASSETS_PATH, BACKGROUND_MUSIC_FILENAME)
+    if not os.path.exists(music_path) or not ensure_audio_ready():
+        background_music_available = False
+        return
+
+    try:
+        pygame.mixer.music.load(music_path)
+        pygame.mixer.music.set_volume(music_volume)
+        pygame.mixer.music.play(-1)
+    except pygame.error:
+        background_music_available = False
+        return
+    background_music_available = True
 
 
 def get_current_resolution_index() -> int:
@@ -171,6 +210,9 @@ MENU_BUTTON_VERTICAL_GAP = 12
 MENU_BUTTON_BLOCK_CENTER_Y = int(SCREEN_HEIGHT * 0.60)
 TILE_PATH_TEXTURE_FILENAME = "tile_path.png"
 TILE_WALL_TEXTURE_FILENAME = "tile_wall.png"
+BACKGROUND_MUSIC_FILENAME = "backgroundmusic.mp3"
+music_volume = 0.55
+background_music_available = False
 
 
 def load_image(filename: str, use_alpha: bool = False) -> pygame.Surface:
@@ -452,3 +494,5 @@ for filename in enemy_filenames:
     dossier_enemy_images.append(scale_image_proportional_height(image, int(SCREEN_HEIGHT * 0.20)))
     combat_enemy_images.append(scale_image_proportional_height(image, int(SCREEN_HEIGHT * 0.35)))
     map_enemy_images.append(scale_image_proportional_height(image, TILE_SIZE - 16))
+
+play_background_music()
