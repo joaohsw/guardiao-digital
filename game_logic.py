@@ -159,6 +159,18 @@ def start_battle() -> None:
     game_state.game_state = "battle"
 
 
+def open_story_screen(return_state: str = "exploring") -> None:
+    game_state.last_game_state = return_state
+    game_state.game_state = "story"
+
+
+def close_story_screen() -> None:
+    if game_state.last_game_state in ("exploring", "paused"):
+        game_state.game_state = game_state.last_game_state
+        return
+    game_state.game_state = "exploring"
+
+
 def calculate_attack_effect(attack: dict, villain: Villain) -> Tuple[int, str]:
     effectiveness = game_state.get_attack_effectiveness(villain.enemy_key, attack["id"])
     damage = EFFECTIVENESS_DAMAGE[effectiveness]

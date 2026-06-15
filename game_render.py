@@ -16,7 +16,6 @@ from game_config import (
     BUTTON_BORDER,
     BUTTON_COLOR,
     CONCLUSION_TEXT,
-    GAME_STORY,
     GREEN,
     HUD_BG,
     PANEL_BG,
@@ -47,6 +46,7 @@ from game_config import (
     DEFEAT_QUIT_RECT,
     PAUSE_PANEL_RECT,
     PAUSE_CONTINUE_RECT,
+    PAUSE_STORY_RECT,
     PAUSE_SETTINGS_RECT,
     PAUSE_MENU_RECT,
     PAUSE_QUIT_RECT,
@@ -450,31 +450,6 @@ def draw_settings_screen() -> None:
 
 def draw_story_screen() -> None:
     game_assets.screen.blit(game_assets.historia_bg, (0, 0))
-    portrait_rect = game_assets.player_image_portrait.get_rect(center=(SCREEN_WIDTH * 0.20, SCREEN_HEIGHT * 0.54))
-    game_assets.screen.blit(game_assets.player_image_portrait, portrait_rect)
-
-    story_panel = pygame.Rect(450, 92, 760, 530)
-    draw_panel(story_panel)
-    draw_text("Missao no mapa", game_assets.title_font, WHITE, game_assets.screen, story_panel.centerx, 136, center=True)
-    draw_text_block(
-        GAME_STORY,
-        game_assets.story_font,
-        WHITE,
-        game_assets.screen,
-        story_panel.x + 45,
-        story_panel.y + 205,
-        story_panel.width - 90,
-        center=False,
-    )
-    draw_text(
-        "Pressione ENTER ou clique para explorar",
-        game_assets.help_font,
-        WHITE,
-        game_assets.screen,
-        story_panel.centerx,
-        story_panel.bottom - 40,
-        center=True,
-    )
 
 
 def draw_world_screen(show_map_notice: bool = True) -> None:
@@ -1135,11 +1110,12 @@ def draw_pause_screen() -> None:
         center=True,
     )
 
-    # 4. Draw buttons: Continuar, Configuracoes, Voltar ao Menu
+    # 4. Draw pause actions
     mouse_pos = game_assets.get_virtual_mouse_pos()
 
     for rect, text in (
         (PAUSE_CONTINUE_RECT, "Continuar"),
+        (PAUSE_STORY_RECT, "Reler hist\u00f3ria"),
         (PAUSE_SETTINGS_RECT, "Configuracoes"),
         (PAUSE_MENU_RECT, "Voltar ao Menu"),
         (PAUSE_QUIT_RECT, "Sair do Jogo"),

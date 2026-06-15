@@ -19,6 +19,7 @@ from game_config import (
     ENCOUNTER_FIGHT_RECT,
     ENCOUNTER_FLEE_RECT,
     PAUSE_CONTINUE_RECT,
+    PAUSE_STORY_RECT,
     PAUSE_SETTINGS_RECT,
     PAUSE_MENU_RECT,
     PAUSE_QUIT_RECT,
@@ -56,11 +57,11 @@ def main() -> None:
             if game_state.game_state == "menu":
                 if event.type == pygame.KEYDOWN and event.key == pygame.K_RETURN:
                     game_logic.reset_progress()
-                    game_state.game_state = "exploring"
+                    game_logic.open_story_screen()
                 elif event.type == pygame.MOUSEBUTTONDOWN and mouse_pos is not None:
                     if game_assets.menu_play_button_rect.collidepoint(mouse_pos):
                         game_logic.reset_progress()
-                        game_state.game_state = "exploring"
+                        game_logic.open_story_screen()
                     elif game_assets.menu_settings_button_rect.collidepoint(mouse_pos):
                         game_state.settings_resolution_dropdown_open = False
                         game_state.last_game_state = "menu"
@@ -91,8 +92,11 @@ def main() -> None:
                         game_state.settings_resolution_dropdown_open = False
 
             elif game_state.game_state == "story":
-                if (event.type == pygame.KEYDOWN and event.key == pygame.K_RETURN) or event.type == pygame.MOUSEBUTTONDOWN:
-                    game_state.game_state = "exploring"
+                if (
+                    event.type == pygame.KEYDOWN
+                    and event.key in (pygame.K_RETURN, pygame.K_ESCAPE)
+                ) or event.type == pygame.MOUSEBUTTONDOWN:
+                    game_logic.close_story_screen()
 
             elif game_state.game_state == "exploring":
                 if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
@@ -104,6 +108,8 @@ def main() -> None:
                 elif event.type == pygame.MOUSEBUTTONDOWN and mouse_pos is not None:
                     if PAUSE_CONTINUE_RECT.collidepoint(mouse_pos):
                         game_state.game_state = "exploring"
+                    elif PAUSE_STORY_RECT.collidepoint(mouse_pos):
+                        game_logic.open_story_screen("paused")
                     elif PAUSE_SETTINGS_RECT.collidepoint(mouse_pos):
                         game_state.settings_resolution_dropdown_open = False
                         game_state.last_game_state = "paused"

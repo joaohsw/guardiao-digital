@@ -502,9 +502,18 @@ ENEMY_COMBAT_PROFILES = [
 ]
 
 GAME_STORY = (
-    "A internet da cidade foi tomada por viloes digitais. "
-    "Como Guardiao Digital, voce deve explorar o mapa, encontrar cada ameaca "
-    "e neutralizar ataques digitais para proteger os usuarios."
+    "A Cidade Conectada esta sob ataque. Links falsos, programas maliciosos, "
+    "golpes, perseguicoes online e conteudos manipulados abriram falhas pelos "
+    "caminhos da rede.\n"
+    "\n"
+    "Voce e o Guardiao Digital: um defensor treinado para reconhecer sinais de "
+    "risco, reunir ferramentas de verificacao, protecao, privacidade e acao, e "
+    "usar cada uma no momento certo.\n"
+    "\n"
+    "Explore o mapa, encontre o Guia Digital Magico, colete categorias de defesa "
+    "e enfrente os viloes. Para vencer, escolha respostas coerentes com cada "
+    "ameaca, preserve sua integridade e neutralize todos os perigos antes que a "
+    "cidade perca sua conexao."
 )
 
 CONCLUSION_TEXT = (
@@ -582,8 +591,9 @@ DEFEAT_QUIT_RECT = VICTORY_QUIT_RECT.copy()
 ENCOUNTER_FIGHT_RECT = pygame.Rect(420, 456, 200, 46)
 ENCOUNTER_FLEE_RECT = pygame.Rect(660, 456, 200, 46)
 
-PAUSE_PANEL_RECT = pygame.Rect(440, 140, 400, 410)
-PAUSE_CONTINUE_RECT = pygame.Rect(500, 210, 280, 50)
-PAUSE_SETTINGS_RECT = pygame.Rect(500, 280, 280, 50)
-PAUSE_MENU_RECT = pygame.Rect(500, 350, 280, 50)
-PAUSE_QUIT_RECT = pygame.Rect(500, 420, 280, 50)
+PAUSE_PANEL_RECT = pygame.Rect(440, 105, 400, 510)
+PAUSE_CONTINUE_RECT = pygame.Rect(500, 190, 280, 50)
+PAUSE_STORY_RECT = pygame.Rect(500, 255, 280, 50)
+PAUSE_SETTINGS_RECT = pygame.Rect(500, 320, 280, 50)
+PAUSE_MENU_RECT = pygame.Rect(500, 385, 280, 50)
+PAUSE_QUIT_RECT = pygame.Rect(500, 450, 280, 50)
