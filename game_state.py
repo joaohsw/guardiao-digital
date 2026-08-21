@@ -122,6 +122,7 @@ map_notice_message = ""
 map_notice_timer = 0.0
 book_page = 0
 settings_resolution_dropdown_open = False
+settings_volume_dragging = False
 PLAYER_WALK_FRAME_DURATION = 0.10
 PLAYER_IDLE_FRAME_INDEX = 0
 player_walk_frame_index = PLAYER_IDLE_FRAME_INDEX
